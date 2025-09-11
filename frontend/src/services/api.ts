@@ -1,21 +1,30 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 
+interface Team {
+  id: number;
+  name: string;
+  short_name: string;
+  logo_url?: string;
+}
+
 interface Match {
   id: number;
-  home_team: {
-    id: number;
-    name: string;
-    short_name: string;
-  };
-  away_team: {
-    id: number;
-    name: string;
-    short_name: string;
-  };
+  home_team: Team;
+  away_team: Team;
   date: string;
   matchday: number;
   season: string;
+}
+
+interface MatchResult {
+  match: Match;
+  home_goals: number;
+  away_goals: number;
+  home_xg: number;
+  away_xg: number;
+  home_possession: number;
+  away_possession: number;
 }
 
 interface FormFactor {
@@ -69,6 +78,16 @@ export const fetchTeamForm = async (teamId: number): Promise<number> => {
   }
 }
 
+export const fetchTeamMatches = async (teamId: number): Promise<MatchResult[]> => {
+  try {
+    const response = await axios.get(`${API_URL}/team/${teamId}/matches`)
+    return response.data
+  } catch (error) {
+    console.error(`Fehler beim Abrufen der letzten Spiele für Team ${teamId}:`, error)
+    throw error
+  }
+}
+
 // Custom Hooks
 export const useNextMatchday = () => {
   const [data, setData] = useState<Match[] | null>(null)
@@ -116,6 +135,33 @@ export const usePredictions = (matchday: number) => {
 
     getPredictions()
   }, [matchday])
+
+  return { data, loading, error }
+}
+
+export const useTeamMatches = (teamId: number) => {
+  const [data, setData] = useState<MatchResult[] | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const getTeamMatches = async () => {
+      if (!teamId) return
+      
+      try {
+        setLoading(true)
+        const matchData = await fetchTeamMatches(teamId)
+        setData(matchData)
+        setError(null)
+      } catch (err) {
+        setError('Fehler beim Laden der Team-Spiele.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    getTeamMatches()
+  }, [teamId])
 
   return { data, loading, error }
 }

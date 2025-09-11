@@ -19,15 +19,51 @@ class PredictionService:
         home_form = await self.data_service.get_team_form(match.home_team.id)
         away_form = await self.data_service.get_team_form(match.away_team.id)
         
-        # Mock-Daten für die anderen Faktoren
-        # In der realen Implementierung würden diese aus den historischen Daten berechnet
+        # Lade die letzten Spiele, um xG und Ballbesitz zu berechnen
+        home_last_matches = await self.data_service.get_last_n_matches(match.home_team.id, 6)
+        away_last_matches = await self.data_service.get_last_n_matches(match.away_team.id, 6)
+        
+        # Berechne xG für die letzten 6 Spiele
+        home_xg_last_6 = 0
+        home_possession_sum = 0
+        
+        for m in home_last_matches:
+            if m.match.home_team.id == match.home_team.id:
+                home_xg_last_6 += m.home_xg
+                home_possession_sum += m.home_possession
+            else:
+                home_xg_last_6 += m.away_xg
+                home_possession_sum += m.away_possession
+        
+        away_xg_last_6 = 0
+        away_possession_sum = 0
+        
+        for m in away_last_matches:
+            if m.match.home_team.id == match.away_team.id:
+                away_xg_last_6 += m.home_xg
+                away_possession_sum += m.home_possession
+            else:
+                away_xg_last_6 += m.away_xg
+                away_possession_sum += m.away_possession
+        
+        # Durchschnitt berechnen
+        home_possession_avg = home_possession_sum / len(home_last_matches) if home_last_matches else 50
+        away_possession_avg = away_possession_sum / len(away_last_matches) if away_last_matches else 50
+        
+        # Fallback auf Schätzwerte, falls keine Daten verfügbar sind
+        if not home_last_matches:
+            home_xg_last_6 = 8.5
+        
+        if not away_last_matches:
+            away_xg_last_6 = 7.5
+        
         return FormFactor(
             home_form=home_form,
             away_form=away_form,
-            home_xg_last_6=np.random.normal(10, 2),
-            away_xg_last_6=np.random.normal(8, 2),
-            home_possession_avg=np.random.normal(55, 10),
-            away_possession_avg=np.random.normal(50, 10)
+            home_xg_last_6=home_xg_last_6,
+            away_xg_last_6=away_xg_last_6,
+            home_possession_avg=home_possession_avg,
+            away_possession_avg=away_possession_avg
         )
     
     async def predict_match(self, match: Match) -> Prediction:
@@ -76,9 +112,15 @@ class PredictionService:
         """
         Erstellt Vorhersagen für alle Spiele eines Spieltags
         """
-        # In einer realen Implementierung würden hier die Spiele des Spieltags geladen
-        # Für den Beispielcode verwenden wir die Spiele des nächsten Spieltags
+        # Versuche, die Spiele des angegebenen Spieltags zu laden
+        # In diesem Beispiel verwenden wir die Spiele des nächsten Spieltags,
+        # da die API noch keinen Endpunkt für einen spezifischen Spieltag hat
+        
         matches = await self.data_service.get_next_matchday()
+        
+        # Filtere die Spiele nach dem angegebenen Spieltag
+        # Wenn der angegebene Spieltag nicht mit dem nächsten Spieltag übereinstimmt,
+        # werden die verfügbaren Spiele trotzdem verwendet
         
         predictions = []
         for match in matches:

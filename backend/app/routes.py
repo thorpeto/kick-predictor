@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from app.models.schemas import Match, Prediction
+from app.models.schemas import Match, Prediction, MatchResult
 from app import data_service, prediction_service
 
 router = APIRouter(prefix="/api", tags=["Bundesliga"])
@@ -40,3 +40,14 @@ async def get_team_form(team_id: int):
         return {"team_id": team_id, "form": round(form, 2)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler bei der Berechnung der Form: {str(e)}")
+
+@router.get("/team/{team_id}/matches", response_model=List[MatchResult])
+async def get_team_matches(team_id: int):
+    """
+    Liefert alle vergangenen Spiele eines Teams
+    """
+    try:
+        matches = await data_service.get_team_matches(team_id)
+        return matches
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Abrufen der Spiele: {str(e)}")

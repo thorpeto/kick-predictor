@@ -1,28 +1,39 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { useNextMatchday } from '../services/api'
+
+// Typdefinitionen werden aus der API importiert
+interface Team {
+  id: number;
+  name: string;
+  short_name: string;
+  logo_url?: string;
+}
+
+interface Match {
+  id: number;
+  home_team: Team;
+  away_team: Team;
+  date: string;
+  matchday: number;
+  season: string;
+}
 
 const HomePage = () => {
-  const [nextMatchday, setNextMatchday] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
+  // Verwenden des benutzerdefinierten Hooks für den nächsten Spieltag
+  const { data: matches, loading: matchesLoading, error: matchesError } = useNextMatchday()
+
+  // Aktualisiere den Ladezustand wenn der Hook fertig ist
   useEffect(() => {
-    const fetchNextMatchday = async () => {
-      try {
-        setLoading(true)
-        const response = await axios.get('/api/next-matchday')
-        setNextMatchday(response.data)
-        setError(null)
-      } catch (err) {
-        console.error('Fehler beim Abrufen des nächsten Spieltags:', err)
-        setError('Fehler beim Laden der Daten. Bitte versuchen Sie es später erneut.')
-      } finally {
-        setLoading(false)
-      }
+    if (!matchesLoading) {
+      setLoading(false)
     }
-
-    fetchNextMatchday()
-  }, [])
+    if (matchesError) {
+      setError('Fehler beim Laden der Daten. Bitte versuchen Sie es später erneut.')
+    }
+  }, [matchesLoading, matchesError])
 
   return (
     <div>
@@ -54,14 +65,14 @@ const HomePage = () => {
           <p className="text-center">Lade Spieltag-Daten...</p>
         ) : error ? (
           <p className="text-center text-red-600">{error}</p>
-        ) : nextMatchday && nextMatchday.matches ? (
+        ) : matches && matches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {nextMatchday.matches.map((match, index) => (
-              <div key={index} className="card">
+            {matches.map((match: Match) => (
+              <div key={match.id} className="card">
                 <div className="flex justify-between items-center">
-                  <div className="font-bold">{match.home}</div>
+                  <div className="font-bold">{match.home_team.name}</div>
                   <div className="text-gray-600">vs.</div>
-                  <div className="font-bold text-right">{match.away}</div>
+                  <div className="font-bold text-right">{match.away_team.name}</div>
                 </div>
                 <div className="text-center text-gray-500 mt-2">
                   {new Date(match.date).toLocaleString('de-DE', {
