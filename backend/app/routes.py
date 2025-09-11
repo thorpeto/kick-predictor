@@ -1,0 +1,42 @@
+from fastapi import APIRouter, HTTPException
+from typing import List
+from app.models.schemas import Match, Prediction
+from app import data_service, prediction_service
+
+router = APIRouter(prefix="/api", tags=["Bundesliga"])
+
+@router.get("/next-matchday", response_model=List[Match])
+async def get_next_matchday():
+    """
+    Liefert die Spiele des nächsten Spieltags
+    """
+    try:
+        matches = await data_service.get_next_matchday()
+        return matches
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Abrufen der Daten: {str(e)}")
+
+@router.get("/predictions/{matchday}", response_model=List[Prediction])
+async def get_predictions(matchday: int):
+    """
+    Berechnet Vorhersagen für einen bestimmten Spieltag
+    """
+    if matchday < 1 or matchday > 34:
+        raise HTTPException(status_code=400, detail="Spieltag muss zwischen 1 und 34 liegen")
+    
+    try:
+        predictions = await prediction_service.predict_matchday(matchday)
+        return predictions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler bei der Berechnung der Vorhersagen: {str(e)}")
+
+@router.get("/team/{team_id}/form")
+async def get_team_form(team_id: int):
+    """
+    Berechnet die aktuelle Form eines Teams
+    """
+    try:
+        form = await data_service.get_team_form(team_id)
+        return {"team_id": team_id, "form": round(form, 2)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler bei der Berechnung der Form: {str(e)}")
