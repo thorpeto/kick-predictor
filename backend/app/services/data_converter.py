@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+import random
 from app.models.schemas import Match, Team, MatchResult
 
 class DataConverter:
@@ -54,9 +55,9 @@ class DataConverter:
         if not final_result:
             return None
             
-        # In der OpenLigaDB API sind keine xG und Ballbesitz-Daten verfügbar
+        # In der OpenLigaDB API sind keine xG-Daten verfügbar
         # Wir müssten diese aus einer anderen Quelle beziehen oder schätzen
-        # Für dieses Beispiel verwenden wir Platzhalter-Werte
+        # Für dieses Beispiel generieren wir zufällige, aber plausible Werte
         estimated_home_xg = final_result.get('pointsTeam1', 0) * 1.2  # Einfache Schätzung
         estimated_away_xg = final_result.get('pointsTeam2', 0) * 1.2
         
@@ -65,7 +66,5 @@ class DataConverter:
             home_goals=final_result.get('pointsTeam1', 0),
             away_goals=final_result.get('pointsTeam2', 0),
             home_xg=estimated_home_xg,
-            away_xg=estimated_away_xg,
-            home_possession=55.0,  # Platzhalter
-            away_possession=45.0   # Platzhalter
+            away_xg=estimated_away_xg
         )

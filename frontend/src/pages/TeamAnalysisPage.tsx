@@ -22,7 +22,6 @@ interface TeamData {
     goalsScored: number;
     goalsConceded: number;
     xGFor: string;
-    avgPossession: string;
   };
 }
 
@@ -32,11 +31,21 @@ const TeamAnalysisPage = () => {
     { id: 40, name: 'FC Bayern München', short_name: 'FCB' },
     { id: 7, name: 'Borussia Dortmund', short_name: 'BVB' },
     { id: 1635, name: 'RB Leipzig', short_name: 'RBL' },
-    { id: 6, name: 'Bayer Leverkusen', short_name: 'B04' },
+    { id: 6, name: 'Bayer 04 Leverkusen', short_name: 'B04' },
     { id: 87, name: 'Borussia Mönchengladbach', short_name: 'BMG' },
     { id: 131, name: 'VfL Wolfsburg', short_name: 'WOB' },
     { id: 91, name: 'Eintracht Frankfurt', short_name: 'SGE' },
     { id: 16, name: 'VfB Stuttgart', short_name: 'VFB' },
+    { id: 65, name: '1. FC Köln', short_name: 'KOE' },
+    { id: 80, name: '1. FC Union Berlin', short_name: 'FCU' },
+    { id: 81, name: '1. FSV Mainz 05', short_name: 'M05' },
+    { id: 199, name: '1. FC Heidenheim 1846', short_name: 'FCH' },
+    { id: 95, name: 'FC Augsburg', short_name: 'FCA' },
+    { id: 98, name: 'FC St. Pauli', short_name: 'STP' },
+    { id: 100, name: 'Hamburger SV', short_name: 'HSV' },
+    { id: 112, name: 'SC Freiburg', short_name: 'SCF' },
+    { id: 134, name: 'SV Werder Bremen', short_name: 'SVW' },
+    { id: 175, name: 'TSG Hoffenheim', short_name: 'TSG' }
   ])
   const [selectedTeamId, setSelectedTeamId] = useState<number>(40)
   const [teamForm, setTeamForm] = useState<number | null>(null)
@@ -87,8 +96,7 @@ const TeamAnalysisPage = () => {
         stats: {
           goalsScored: 0,
           goalsConceded: 0,
-          xGFor: '0.0',
-          avgPossession: '0.0'
+          xGFor: '0.0'
         }
       });
       return;
@@ -108,8 +116,7 @@ const TeamAnalysisPage = () => {
         result: isHome 
           ? (match.home_goals > match.away_goals ? 'W' : match.home_goals < match.away_goals ? 'L' : 'D')
           : (match.away_goals > match.home_goals ? 'W' : match.away_goals < match.home_goals ? 'L' : 'D'),
-        xG: isHome ? match.home_xg.toFixed(1) : match.away_xg.toFixed(1),
-        possession: isHome ? match.home_possession : match.away_possession
+        xG: isHome ? match.home_xg.toFixed(1) : match.away_xg.toFixed(1)
       }
     }).sort((a, b) => a.matchday - b.matchday) // Sortiere nach Spieltag
 
@@ -117,7 +124,6 @@ const TeamAnalysisPage = () => {
     const goalsScored = processedMatches.reduce((sum, match) => sum + match.goalsScored, 0)
     const goalsConceded = processedMatches.reduce((sum, match) => sum + match.goalsConceded, 0)
     const xGFor = processedMatches.reduce((sum, match) => sum + parseFloat(match.xG), 0).toFixed(1)
-    const avgPossession = (processedMatches.reduce((sum, match) => sum + match.possession, 0) / processedMatches.length).toFixed(1)
 
     // Setze die Teamdaten
     setTeamData({
@@ -127,8 +133,7 @@ const TeamAnalysisPage = () => {
       stats: {
         goalsScored,
         goalsConceded,
-        xGFor,
-        avgPossession
+        xGFor
       }
     })
   }, [matchesData, teamForm, selectedTeamId, teams])
@@ -212,9 +217,9 @@ const TeamAnalysisPage = () => {
                   ></div>
                 </div>
                 
-                <h3 className="font-semibold mt-6 mb-2">Letzte {teamData.lastMatches.length} Spiele:</h3>
+                <h3 className="font-semibold mt-6 mb-2">Letzte {teamData.lastMatches.length} Spiele (inkl. letzte Saison):</h3>
                 {teamData.lastMatches.length > 0 ? (
-                  <div className="grid grid-cols-6 gap-2">
+                  <div className="grid grid-cols-7 gap-2">
                     {teamData.lastMatches.map((match, index) => (
                       <div 
                         key={index} 
@@ -243,7 +248,6 @@ const TeamAnalysisPage = () => {
                     <li>Erzielte Tore: <span className="font-bold">{teamData.stats.goalsScored}</span></li>
                     <li>Gegentore: <span className="font-bold">{teamData.stats.goalsConceded}</span></li>
                     <li>Expected Goals (xG): <span className="font-bold">{teamData.stats.xGFor}</span></li>
-                    <li>Durchschnittlicher Ballbesitz: <span className="font-bold">{teamData.stats.avgPossession}%</span></li>
                   </ul>
                 ) : (
                   <div className="text-gray-500 italic">

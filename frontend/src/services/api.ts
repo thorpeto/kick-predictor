@@ -23,8 +23,6 @@ interface MatchResult {
   away_goals: number;
   home_xg: number;
   away_xg: number;
-  home_possession: number;
-  away_possession: number;
 }
 
 interface FormFactor {
@@ -32,8 +30,6 @@ interface FormFactor {
   away_form: number;
   home_xg_last_6: number;
   away_xg_last_6: number;
-  home_possession_avg: number;
-  away_possession_avg: number;
 }
 
 interface Prediction {

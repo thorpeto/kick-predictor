@@ -44,10 +44,10 @@ async def get_team_form(team_id: int):
 @router.get("/team/{team_id}/matches", response_model=List[MatchResult])
 async def get_team_matches(team_id: int):
     """
-    Liefert alle vergangenen Spiele eines Teams
+    Liefert die letzten Spiele eines Teams (bis zu 14 Spiele, einschließlich der letzten Saison)
     """
     try:
-        matches = await data_service.get_team_matches(team_id)
+        matches = await data_service.get_last_n_matches(team_id, 14)
         return matches
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler beim Abrufen der Spiele: {str(e)}")

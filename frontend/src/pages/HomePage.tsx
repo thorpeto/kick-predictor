@@ -48,7 +48,7 @@ const HomePage = () => {
         <div className="card">
           <h2 className="text-bundesliga-red mb-4">Präzise Vorhersagen</h2>
           <p>
-            Unser Algorithmus analysiert die letzten 6 Wochen der Bundesliga und berücksichtigt dabei Tore, Expected Goals, Ballbesitz und weitere Faktoren, um präzise Vorhersagen zu treffen.
+            Unser Algorithmus analysiert die letzten 6 Wochen der Bundesliga und berücksichtigt dabei Tore, Expected Goals und weitere Faktoren, um präzise Vorhersagen zu treffen.
           </p>
         </div>
         <div className="card">

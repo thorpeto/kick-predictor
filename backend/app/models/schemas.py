@@ -22,16 +22,12 @@ class MatchResult(BaseModel):
     away_goals: int
     home_xg: float
     away_xg: float
-    home_possession: float
-    away_possession: float
 
 class FormFactor(BaseModel):
     home_form: float
     away_form: float
     home_xg_last_6: float
     away_xg_last_6: float
-    home_possession_avg: float
-    away_possession_avg: float
 
 class Prediction(BaseModel):
     match: Match

@@ -169,3 +169,44 @@ class OpenLigaDBClient:
         
         # Nimm die letzten n Spiele oder alle, wenn weniger als n vorhanden sind
         return past_matches[:n] if len(past_matches) > n else past_matches
+        
+    async def get_matches_across_seasons(self, team_id: int, n: int = 14, league: str = "bl1", current_season: str = "2025", previous_season: str = "2024") -> List[Dict[str, Any]]:
+        """
+        Holt Spiele eines Teams über zwei Saisons hinweg
+        
+        Args:
+            team_id: Team-ID
+            n: Anzahl der Spiele, die zurückgegeben werden sollen
+            league: Ligakürzel (bl1 = 1. Bundesliga, bl2 = 2. Bundesliga)
+            current_season: Aktuelle Saison (z.B. "2025" für 2025/2026)
+            previous_season: Vorherige Saison (z.B. "2024" für 2024/2025)
+            
+        Returns:
+            Liste der Spiele des Teams aus beiden Saisons (maximal n)
+        """
+        # Hole Spiele aus aktueller Saison
+        current_matches = await self.get_team_matches(team_id, league, current_season)
+        
+        # Hole Spiele aus vorheriger Saison
+        previous_matches = await self.get_team_matches(team_id, league, previous_season)
+        
+        # Kombiniere die Spiele
+        all_matches = current_matches + previous_matches
+        
+        # Aktuelles Datum
+        now = datetime.now()
+        
+        # Filtere nach vergangenen Spielen
+        past_matches = [
+            match for match in all_matches 
+            if datetime.fromisoformat(match.get('matchDateTime', '').replace('Z', '+00:00')) < now
+        ]
+        
+        # Sortiere nach Datum (neueste zuerst)
+        past_matches.sort(
+            key=lambda m: datetime.fromisoformat(m.get('matchDateTime', '').replace('Z', '+00:00')), 
+            reverse=True
+        )
+        
+        # Nimm die letzten n Spiele oder alle, wenn weniger als n vorhanden sind
+        return past_matches[:n] if len(past_matches) > n else past_matches

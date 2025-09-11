@@ -40,14 +40,20 @@ class DataService:
             logger.error(f"Fehler beim Abrufen der Spiele für Team {team_id}: {str(e)}")
             return []
     
-    async def get_last_n_matches(self, team_id: int, n: int = 6) -> List[MatchResult]:
+    async def get_last_n_matches(self, team_id: int, n: int = 14) -> List[MatchResult]:
         """
-        Holt die letzten n Spiele eines Teams
+        Holt die letzten n Spiele eines Teams über die aktuelle und vorherige Saison
         """
         try:
             async with OpenLigaDBClient() as client:
-                # Hole die letzten n Spiele des Teams
-                matches_data = await client.get_last_n_matches(team_id, n, self.league, self.season)
+                # Hole die letzten n Spiele des Teams über beide Saisons
+                matches_data = await client.get_matches_across_seasons(
+                    team_id, 
+                    n=n, 
+                    league=self.league, 
+                    current_season=self.season, 
+                    previous_season="2024"  # Vorherige Saison 2024/2025
+                )
                 
                 # Konvertiere die Daten in unser Modell
                 results = []
@@ -115,8 +121,8 @@ class DataService:
         Berechnet die aktuelle Form eines Teams basierend auf den letzten Spielen
         """
         try:
-            # Hole die letzten 6 Spiele des Teams (oder weniger, wenn nicht so viele verfügbar sind)
-            last_matches = await self.get_last_n_matches(team_id, 6)
+            # Hole die letzten 14 Spiele des Teams (oder weniger, wenn nicht so viele verfügbar sind)
+            last_matches = await self.get_last_n_matches(team_id, 14)
             
             if not last_matches:
                 logger.info(f"Keine Spiele für Team-ID {team_id} gefunden. Verwende neutrale Form (0.5).")

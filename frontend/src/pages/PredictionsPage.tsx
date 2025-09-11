@@ -29,8 +29,6 @@ interface FormFactor {
   away_form: number;
   home_xg_last_6: number;
   away_xg_last_6: number;
-  home_possession_avg: number;
-  away_possession_avg: number;
 }
 
 interface Prediction {
@@ -127,12 +125,10 @@ const PredictionsPage = () => {
                   <div>
                     <p><span className="font-medium">Form {prediction.match.home_team.name}:</span> {(prediction.form_factors.home_form * 100).toFixed(0)}%</p>
                     <p><span className="font-medium">xG letzte 6 Spiele:</span> {prediction.form_factors.home_xg_last_6.toFixed(1)}</p>
-                    <p><span className="font-medium">Ø Ballbesitz:</span> {prediction.form_factors.home_possession_avg.toFixed(1)}%</p>
                   </div>
                   <div>
                     <p><span className="font-medium">Form {prediction.match.away_team.name}:</span> {(prediction.form_factors.away_form * 100).toFixed(0)}%</p>
                     <p><span className="font-medium">xG letzte 6 Spiele:</span> {prediction.form_factors.away_xg_last_6.toFixed(1)}</p>
-                    <p><span className="font-medium">Ø Ballbesitz:</span> {prediction.form_factors.away_possession_avg.toFixed(1)}%</p>
                   </div>
                 </div>
               </div>

@@ -8,7 +8,6 @@ Kick Predictor analysiert historische Bundesliga-Daten, berechnet Formkurven und
 
 - Erzielte Tore und Gegentore
 - Expected Goals (xG)
-- Ballbesitz
 - Heimvorteil
 - Historische Begegnungen
 

@@ -25,7 +25,6 @@ const AboutPage = () => {
           <li>Aktuelle Form der Teams (basierend auf den letzten 6 Spielen)</li>
           <li>Erzielte Tore und Gegentore</li>
           <li>Expected Goals (xG) als Maß für die Qualität der Torchancen</li>
-          <li>Ballbesitz und andere spielrelevante Statistiken</li>
           <li>Heimvorteil</li>
           <li>Historische Begegnungen zwischen den Teams</li>
         </ul>
