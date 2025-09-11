@@ -27,18 +27,18 @@ interface TeamData {
 }
 
 const TeamAnalysisPage = () => {
-  // Liste der Teams (später durch API-Aufruf ersetzen)
+  // Liste der Teams mit korrekten OpenLigaDB-API IDs
   const [teams, setTeams] = useState<Team[]>([
-    { id: 1, name: 'FC Bayern München', short_name: 'FCB' },
-    { id: 2, name: 'Borussia Dortmund', short_name: 'BVB' },
-    { id: 3, name: 'RB Leipzig', short_name: 'RBL' },
-    { id: 4, name: 'Bayer Leverkusen', short_name: 'B04' },
-    { id: 5, name: 'Borussia Mönchengladbach', short_name: 'BMG' },
-    { id: 6, name: 'VfL Wolfsburg', short_name: 'WOB' },
-    { id: 7, name: 'Eintracht Frankfurt', short_name: 'SGE' },
-    { id: 8, name: 'VfB Stuttgart', short_name: 'VFB' },
+    { id: 40, name: 'FC Bayern München', short_name: 'FCB' },
+    { id: 7, name: 'Borussia Dortmund', short_name: 'BVB' },
+    { id: 1635, name: 'RB Leipzig', short_name: 'RBL' },
+    { id: 6, name: 'Bayer Leverkusen', short_name: 'B04' },
+    { id: 87, name: 'Borussia Mönchengladbach', short_name: 'BMG' },
+    { id: 131, name: 'VfL Wolfsburg', short_name: 'WOB' },
+    { id: 91, name: 'Eintracht Frankfurt', short_name: 'SGE' },
+    { id: 16, name: 'VfB Stuttgart', short_name: 'VFB' },
   ])
-  const [selectedTeamId, setSelectedTeamId] = useState<number>(1)
+  const [selectedTeamId, setSelectedTeamId] = useState<number>(40)
   const [teamForm, setTeamForm] = useState<number | null>(null)
   const [teamData, setTeamData] = useState<TeamData | null>(null)
   const [formLoading, setFormLoading] = useState<boolean>(false)
@@ -216,11 +216,11 @@ const TeamAnalysisPage = () => {
                 {teamData.lastMatches.length > 0 ? (
                   <div className="grid grid-cols-6 gap-2">
                     {teamData.lastMatches.map((match, index) => (
-                      <div
-                        key={index}
+                      <div 
+                        key={index} 
                         className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-white ${
-                          match.result === 'W' ? 'bg-green-600' :
-                          match.result === 'D' ? 'bg-yellow-500' :
+                          match.result === 'W' ? 'bg-green-600' : 
+                          match.result === 'D' ? 'bg-yellow-500' : 
                           'bg-red-600'
                         }`}
                         title={`${match.isHome ? 'Heim' : 'Auswärts'} gegen ${match.opponent}: ${match.goalsScored}:${match.goalsConceded}`}
@@ -231,7 +231,7 @@ const TeamAnalysisPage = () => {
                   </div>
                 ) : (
                   <div className="text-gray-500 italic">
-                    Noch keine Spiele in dieser Saison.
+                    Noch keine Spiele in dieser Saison. Nächster Spieltag: 3
                   </div>
                 )}
               </div>
@@ -255,7 +255,7 @@ const TeamAnalysisPage = () => {
           </div>
           
           <div className="card">
-            <h3 className="font-semibold mb-4">Tore vs. Expected Goals (xG) - Letzte Spiele</h3>
+            <h3 className="font-semibold mb-4">Tore vs. Expected Goals (xG){teamData.lastMatches.length > 0 ? ` - Letzte ${teamData.lastMatches.length} Spiele` : ''}</h3>
             {teamData.lastMatches.length > 0 ? (
               <div className="h-80">
                 <Line 

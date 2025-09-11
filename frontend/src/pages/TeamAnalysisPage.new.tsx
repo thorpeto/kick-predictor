@@ -45,7 +45,7 @@ const TeamAnalysisPage = () => {
   const [formError, setFormError] = useState<string | null>(null)
 
   // Hole Spieldaten mit dem useTeamMatches Hook
-  const { data: matchesData, loading: matchesLoading, error: matchesError } = useTeamMatches(selectedTeamId, 6)
+  const { data: matchesData, loading: matchesLoading, error: matchesError } = useTeamMatches(selectedTeamId)
 
   // Hole die Form-Daten separat
   useEffect(() => {
@@ -70,12 +70,28 @@ const TeamAnalysisPage = () => {
 
   // Verarbeite die erhaltenen Daten
   useEffect(() => {
-    if (!matchesData || matchesData.length === 0 || teamForm === null) return
+    if (teamForm === null) return
 
     const team = teams.find(t => t.id === selectedTeamId) || {
       id: selectedTeamId,
       name: 'Unbekanntes Team',
       short_name: 'UNK'
+    }
+
+    // Wenn keine Spieldaten vorhanden sind, zeige nur die Form an
+    if (!matchesData || matchesData.length === 0) {
+      setTeamData({
+        team,
+        form: teamForm,
+        lastMatches: [],
+        stats: {
+          goalsScored: 0,
+          goalsConceded: 0,
+          xGFor: '0.0',
+          avgPossession: '0.0'
+        }
+      });
+      return;
     }
 
     // Verarbeite die Spieldaten
@@ -196,52 +212,70 @@ const TeamAnalysisPage = () => {
                   ></div>
                 </div>
                 
-                <h3 className="font-semibold mt-6 mb-2">Letzte 6 Spiele:</h3>
-                <div className="grid grid-cols-6 gap-2">
-                  {teamData.lastMatches.map((match, index) => (
-                    <div 
-                      key={index} 
-                      className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-white ${
-                        match.result === 'W' ? 'bg-green-600' : 
-                        match.result === 'D' ? 'bg-yellow-500' : 
-                        'bg-red-600'
-                      }`}
-                      title={`${match.isHome ? 'Heim' : 'Auswärts'} gegen ${match.opponent}: ${match.goalsScored}:${match.goalsConceded}`}
-                    >
-                      {match.result}
-                    </div>
-                  ))}
-                </div>
+                <h3 className="font-semibold mt-6 mb-2">Letzte {teamData.lastMatches.length} Spiele:</h3>
+                {teamData.lastMatches.length > 0 ? (
+                  <div className="grid grid-cols-6 gap-2">
+                    {teamData.lastMatches.map((match, index) => (
+                      <div 
+                        key={index} 
+                        className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-white ${
+                          match.result === 'W' ? 'bg-green-600' : 
+                          match.result === 'D' ? 'bg-yellow-500' : 
+                          'bg-red-600'
+                        }`}
+                        title={`${match.isHome ? 'Heim' : 'Auswärts'} gegen ${match.opponent}: ${match.goalsScored}:${match.goalsConceded}`}
+                      >
+                        {match.result}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-500 italic">
+                    Noch keine Spiele in dieser Saison. Nächster Spieltag: 3
+                  </div>
+                )}
               </div>
               
               <div>
-                <h3 className="font-semibold mb-2">Statistiken (letzte 6 Spiele)</h3>
-                <ul className="space-y-2">
-                  <li>Erzielte Tore: <span className="font-bold">{teamData.stats.goalsScored}</span></li>
-                  <li>Gegentore: <span className="font-bold">{teamData.stats.goalsConceded}</span></li>
-                  <li>Expected Goals (xG): <span className="font-bold">{teamData.stats.xGFor}</span></li>
-                  <li>Durchschnittlicher Ballbesitz: <span className="font-bold">{teamData.stats.avgPossession}%</span></li>
-                </ul>
+                <h3 className="font-semibold mb-2">Statistiken {teamData.lastMatches.length > 0 ? `(letzte ${teamData.lastMatches.length} Spiele)` : ''}</h3>
+                {teamData.lastMatches.length > 0 ? (
+                  <ul className="space-y-2">
+                    <li>Erzielte Tore: <span className="font-bold">{teamData.stats.goalsScored}</span></li>
+                    <li>Gegentore: <span className="font-bold">{teamData.stats.goalsConceded}</span></li>
+                    <li>Expected Goals (xG): <span className="font-bold">{teamData.stats.xGFor}</span></li>
+                    <li>Durchschnittlicher Ballbesitz: <span className="font-bold">{teamData.stats.avgPossession}%</span></li>
+                  </ul>
+                ) : (
+                  <div className="text-gray-500 italic">
+                    Keine Statistiken verfügbar.
+                  </div>
+                )}
               </div>
             </div>
           </div>
           
           <div className="card">
-            <h3 className="font-semibold mb-4">Tore vs. Expected Goals (xG) - Letzte 6 Spiele</h3>
-            <div className="h-80">
-              <Line 
-                data={getChartData() as any} 
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: {
-                      beginAtZero: true
+            <h3 className="font-semibold mb-4">Tore vs. Expected Goals (xG){teamData.lastMatches.length > 0 ? ` - Letzte ${teamData.lastMatches.length} Spiele` : ''}</h3>
+            {teamData.lastMatches.length > 0 ? (
+              <div className="h-80">
+                <Line 
+                  data={getChartData() as any} 
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true
+                      }
                     }
-                  }
-                }} 
-              />
-            </div>
+                  }} 
+                />
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 italic">
+                Keine Spieldaten vorhanden, um ein Diagramm anzuzeigen.
+              </div>
+            )}
           </div>
         </div>
       ) : (
