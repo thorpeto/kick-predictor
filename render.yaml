@@ -3,7 +3,7 @@ services:
   - type: web
     name: kick-predictor-backend
     env: python
-    buildCommand: ./build.sh
+    buildCommand: pip install -r requirements.txt
     startCommand: python server.py
     repo: https://github.com/thorpeto/kick-predictor.git
     branch: main
@@ -24,7 +24,7 @@ services:
   - type: web
     name: kick-predictor-frontend
     env: node
-    buildCommand: ./build.sh
+    buildCommand: npm ci && npm run build
     startCommand: npx serve -s dist -l $PORT
     repo: https://github.com/thorpeto/kick-predictor.git
     branch: main

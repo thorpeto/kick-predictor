@@ -18,7 +18,7 @@ Diese Anleitung beschreibt, wie Sie die Kick Predictor App auf [Render.com](http
    - **Name**: `kick-predictor-backend`
    - **Root Directory**: `backend`
    - **Environment**: `Python 3`
-   - **Build Command**: `./build.sh`
+   - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `python server.py`
    - **Plan**: Wählen Sie den entsprechenden Plan (z.B. Free)
 
@@ -37,7 +37,7 @@ Diese Anleitung beschreibt, wie Sie die Kick Predictor App auf [Render.com](http
    - **Name**: `kick-predictor-frontend`
    - **Root Directory**: `frontend`
    - **Environment**: `Node`
-   - **Build Command**: `./build.sh`
+   - **Build Command**: `npm ci && npm run build`
    - **Start Command**: `npx serve -s dist -l $PORT`
    - **Plan**: Wählen Sie den entsprechenden Plan (z.B. Free)
 
