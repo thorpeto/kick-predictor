@@ -14,11 +14,22 @@ app = FastAPI(
 )
 
 # CORS-Einstellungen für Frontend-Verbindung
+# Definiere erlaubte Ursprünge basierend auf der Umgebungsvariable
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+if not allowed_origins or allowed_origins[0] == "":
+    # Standard-Ursprünge für Entwicklung oder wenn keine definiert sind
+    allowed_origins = [
+        "http://localhost",
+        "http://localhost:80",
+        "http://localhost:3000",
+        "https://kick-predictor-frontend-xxxxxxxx.an.r.appspot.com",  # Platzhalter für Frontend URL
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In Produktion einschränken
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],  # Einschränkung auf benötigte Methoden
     allow_headers=["*"],
 )
 
@@ -35,8 +46,5 @@ app.include_router(router)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)

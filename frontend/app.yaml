@@ -1,0 +1,21 @@
+runtime: nodejs18
+instance_class: F2
+service: frontend
+
+handlers:
+  # Statische Dateien von /dist werden direkt bedient
+  - url: /(.*\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))
+    static_files: dist/\1
+    upload: dist/.*\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)
+    secure: always
+
+  # Alle anderen Anfragen werden an index.html weitergeleitet (für SPA Routing)
+  - url: /.*
+    static_files: dist/index.html
+    upload: dist/index.html
+    secure: always
+    
+env_variables:
+  # Hier Frontend-spezifische Umgebungsvariablen definieren
+  NODE_ENV: "production"
+  VITE_API_URL: "https://backend-dot-kick-predictor.an.r.appspot.com"  # Platzhalter, anpassen mit tatsächlicher Backend URL

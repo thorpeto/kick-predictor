@@ -1,0 +1,2 @@
+project_id = "kick-predictor-12345"  # Ersetzen Sie dies mit Ihrer GCP Projekt-ID
+region     = "europe-west3"      # Oder eine andere bevorzugte Region

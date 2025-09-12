@@ -41,8 +41,34 @@ interface Prediction {
   form_factors: FormFactor;
 }
 
-// API Service
-const API_URL = '/api'
+// API Service Configuration
+// In der Produktionsumgebung sollte VITE_API_URL über Umgebungsvariablen gesetzt werden
+const getApiUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Fallback für Entwicklung und basierend auf aktueller Umgebung
+  if (window.location.hostname === 'localhost') {
+    return '/api';
+  }
+  
+  // Für GCP Deployment - anpassen je nach Setup
+  if (window.location.hostname.includes('appspot.com') || 
+      window.location.hostname.includes('run.app')) {
+    // Standardmäßig nehmen wir an, dass die API unter /api erreichbar ist
+    // wenn Backend und Frontend auf derselben Domain gehostet sind
+    return '/api';
+    
+    // Alternativ können wir die vollständige URL des Backends verwenden
+    // return 'https://backend-service-xxxxxx.an.r.appspot.com';
+  }
+  
+  // Fallback
+  return '/api';
+}
+
+const API_URL = getApiUrl();
 
 export const fetchNextMatchday = async (): Promise<Match[]> => {
   try {
