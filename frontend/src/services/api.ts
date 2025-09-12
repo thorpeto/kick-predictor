@@ -82,8 +82,8 @@ console.log('API_URL configured as:', API_URL);
 
 export const fetchNextMatchday = async (): Promise<Match[]> => {
   try {
-    console.log('Fetching next matchday from:', `${API_URL}/next-matchday`);
-    const response = await axios.get(`${API_URL}/next-matchday`)
+    console.log('Fetching next matchday from:', `${API_URL}/api/next-matchday`);
+    const response = await axios.get(`${API_URL}/api/next-matchday`)
     console.log('Next matchday response:', response.data);
     return response.data
   } catch (error) {
@@ -102,8 +102,8 @@ export const fetchNextMatchday = async (): Promise<Match[]> => {
 
 export const fetchPredictions = async (matchday: number): Promise<Prediction[]> => {
   try {
-    console.log('Fetching predictions from:', `${API_URL}/predictions/${matchday}`);
-    const response = await axios.get(`${API_URL}/predictions/${matchday}`)
+    console.log('Fetching predictions from:', `${API_URL}/api/predictions/${matchday}`);
+    const response = await axios.get(`${API_URL}/api/predictions/${matchday}`)
     console.log('Predictions response:', response.data);
     return response.data
   } catch (error) {
@@ -122,7 +122,7 @@ export const fetchPredictions = async (matchday: number): Promise<Prediction[]> 
 
 export const fetchTeamForm = async (teamId: number): Promise<number> => {
   try {
-    const response = await axios.get(`${API_URL}/team/${teamId}/form`)
+    const response = await axios.get(`${API_URL}/api/team/${teamId}/form`)
     return response.data.form
   } catch (error) {
     console.error(`Fehler beim Abrufen der Form für Team ${teamId}:`, error)
@@ -132,7 +132,7 @@ export const fetchTeamForm = async (teamId: number): Promise<number> => {
 
 export const fetchTeamMatches = async (teamId: number): Promise<MatchResult[]> => {
   try {
-    const response = await axios.get(`${API_URL}/team/${teamId}/matches`)
+    const response = await axios.get(`${API_URL}/api/team/${teamId}/matches`)
     return response.data
   } catch (error) {
     console.error(`Fehler beim Abrufen der letzten Spiele für Team ${teamId}:`, error)
