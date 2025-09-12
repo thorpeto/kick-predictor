@@ -37,7 +37,7 @@ Diese Anleitung beschreibt, wie Sie die Kick Predictor App auf [Render.com](http
    - **Name**: `kick-predictor-frontend`
    - **Root Directory**: `frontend`
    - **Environment**: `Node`
-   - **Build Command**: `npm ci && npm run build`
+   - **Build Command**: `npm install && npm run build`
    - **Start Command**: `npx serve -s dist -l $PORT`
    - **Plan**: Wählen Sie den entsprechenden Plan (z.B. Free)
 

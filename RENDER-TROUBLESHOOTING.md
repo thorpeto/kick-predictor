@@ -26,8 +26,18 @@ Dieser Fehler tritt auf, wenn ein Befehl nicht gefunden werden kann, oft wegen B
 
 ### Node.js-spezifische Probleme
 
-1. **npm-Fehler:** Versuchen Sie, `npm ci` anstelle von `npm install` zu verwenden.
-2. **Serve-Fehler:** Stellen Sie sicher, dass `serve` in den Abhängigkeiten in `package.json` aufgeführt ist.
+1. **npm-Fehler mit package-lock.json:**
+   - Fehler wie `Missing: serve@14.2.5 from lock file` weisen auf eine Diskrepanz zwischen package.json und package-lock.json hin
+   - Verwenden Sie `npm install` statt `npm ci` im Build-Befehl, um die package-lock.json automatisch zu aktualisieren
+   - Alternativ können Sie lokal `npm install` ausführen und die aktualisierte package-lock.json committen
+
+2. **Serve-Fehler:** 
+   - Stellen Sie sicher, dass `serve` in den Abhängigkeiten in `package.json` aufgeführt ist
+   - Bei Bedarf installieren: `npm install serve --save`
+
+3. **Fehlende Abhängigkeiten:**
+   - Überprüfen Sie, ob alle benötigten Abhängigkeiten in `dependencies` (nicht nur in `devDependencies`) aufgeführt sind
+   - Render setzt `NODE_ENV=production`, was dazu führt, dass devDependencies nicht installiert werden
 
 ## Render-Logs überprüfen
 
