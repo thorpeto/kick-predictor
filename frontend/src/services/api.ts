@@ -53,15 +53,18 @@ const getApiUrl = (): string => {
     return '/api';
   }
   
+  // Für Render.com Deployment
+  if (window.location.hostname.includes('render.com')) {
+    // Wenn Backend und Frontend auf verschiedenen Domains gehostet sind
+    return 'https://kick-predictor-backend.onrender.com';
+  }
+  
   // Für GCP Deployment - anpassen je nach Setup
   if (window.location.hostname.includes('appspot.com') || 
       window.location.hostname.includes('run.app')) {
     // Standardmäßig nehmen wir an, dass die API unter /api erreichbar ist
     // wenn Backend und Frontend auf derselben Domain gehostet sind
     return '/api';
-    
-    // Alternativ können wir die vollständige URL des Backends verwenden
-    // return 'https://backend-service-xxxxxx.an.r.appspot.com';
   }
   
   // Fallback

@@ -22,7 +22,7 @@ if not allowed_origins or allowed_origins[0] == "":
         "http://localhost",
         "http://localhost:80",
         "http://localhost:3000",
-        "https://kick-predictor-frontend-xxxxxxxx.an.r.appspot.com",  # Platzhalter für Frontend URL
+        "https://kick-predictor-frontend.onrender.com",  # Render.com Frontend URL
     ]
 
 app.add_middleware(
@@ -46,5 +46,6 @@ app.include_router(router)
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", "8000"))
+    # Render verwendet PORT als Umgebungsvariable
+    port = int(os.getenv("PORT", "10000"))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)

@@ -1,0 +1,39 @@
+services:
+  # Backend Service
+  - type: web
+    name: kick-predictor-backend
+    env: python
+    buildCommand: ./build.sh
+    startCommand: python server.py
+    repo: https://github.com/thorpeto/kick-predictor.git
+    branch: main
+    rootDir: backend
+    region: frankfurt  # Ändern Sie dies nach Bedarf
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: https://kick-predictor-frontend.onrender.com
+      - key: PORT
+        value: 10000
+    autoDeploy: true
+    plan: free  # Ändern Sie dies nach Bedarf (free, starter, etc.)
+
+  # Frontend Service
+  - type: web
+    name: kick-predictor-frontend
+    env: node
+    buildCommand: ./build.sh
+    startCommand: npx serve -s dist -l $PORT
+    repo: https://github.com/thorpeto/kick-predictor.git
+    branch: main
+    rootDir: frontend
+    region: frankfurt  # Ändern Sie dies nach Bedarf
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_API_URL
+        value: https://kick-predictor-backend.onrender.com
+    autoDeploy: true
+    plan: free  # Ändern Sie dies nach Bedarf (free, starter, etc.)
