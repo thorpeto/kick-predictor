@@ -14,7 +14,7 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: ALLOWED_ORIGINS
-        value: https://kick-predictor-frontend.onrender.com
+        value: https://kick-predictor-frontend.onrender.com,https://*.onrender.com
       - key: PORT
         value: 10000
     autoDeploy: true

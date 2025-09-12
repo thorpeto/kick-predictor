@@ -44,51 +44,78 @@ interface Prediction {
 // API Service Configuration
 // In der Produktionsumgebung sollte VITE_API_URL über Umgebungsvariablen gesetzt werden
 const getApiUrl = (): string => {
+  // Zuerst prüfen, ob eine explizite API-URL gesetzt ist
   if (import.meta.env.VITE_API_URL) {
+    console.log('Using VITE_API_URL:', import.meta.env.VITE_API_URL);
     return import.meta.env.VITE_API_URL;
   }
   
-  // Fallback für Entwicklung und basierend auf aktueller Umgebung
-  if (window.location.hostname === 'localhost') {
-    return '/api';
+  // Für lokale Entwicklung
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('Using local development API URL');
+    return 'http://localhost:8000';  // Direkte Verbindung zum Backend
   }
   
   // Für Render.com Deployment
-  if (window.location.hostname.includes('render.com')) {
-    // Wenn Backend und Frontend auf verschiedenen Domains gehostet sind
-    return 'https://kick-predictor-backend.onrender.com';
+  if (window.location.hostname.includes('onrender.com')) {
+    const backendUrl = 'https://kick-predictor-backend.onrender.com';
+    console.log('Using Render.com backend URL:', backendUrl);
+    return backendUrl;
   }
   
   // Für GCP Deployment - anpassen je nach Setup
   if (window.location.hostname.includes('appspot.com') || 
       window.location.hostname.includes('run.app')) {
-    // Standardmäßig nehmen wir an, dass die API unter /api erreichbar ist
-    // wenn Backend und Frontend auf derselben Domain gehostet sind
+    console.log('Using GCP deployment with relative URL');
     return '/api';
   }
   
-  // Fallback
+  // Fallback - versuche relative URL
+  console.log('Using fallback relative URL');
   return '/api';
 }
 
 const API_URL = getApiUrl();
 
+// Debug-Information für die Entwicklung
+console.log('API_URL configured as:', API_URL);
+
 export const fetchNextMatchday = async (): Promise<Match[]> => {
   try {
+    console.log('Fetching next matchday from:', `${API_URL}/next-matchday`);
     const response = await axios.get(`${API_URL}/next-matchday`)
+    console.log('Next matchday response:', response.data);
     return response.data
   } catch (error) {
     console.error('Fehler beim Abrufen des nächsten Spieltags:', error)
+    if (axios.isAxiosError(error)) {
+      console.error('Axios error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url
+      });
+    }
     throw error
   }
 }
 
 export const fetchPredictions = async (matchday: number): Promise<Prediction[]> => {
   try {
+    console.log('Fetching predictions from:', `${API_URL}/predictions/${matchday}`);
     const response = await axios.get(`${API_URL}/predictions/${matchday}`)
+    console.log('Predictions response:', response.data);
     return response.data
   } catch (error) {
     console.error(`Fehler beim Abrufen der Vorhersagen für Spieltag ${matchday}:`, error)
+    if (axios.isAxiosError(error)) {
+      console.error('Axios error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url
+      });
+    }
     throw error
   }
 }

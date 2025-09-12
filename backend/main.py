@@ -23,13 +23,17 @@ if not allowed_origins or allowed_origins[0] == "":
         "http://localhost:80",
         "http://localhost:3000",
         "https://kick-predictor-frontend.onrender.com",  # Render.com Frontend URL
+        "https://*.onrender.com",  # Alle Render.com Subdomains
     ]
+
+# Für Debugging in der Produktionsumgebung
+print(f"CORS allowed origins: {allowed_origins}")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],  # Einschränkung auf benötigte Methoden
+    allow_methods=["GET", "POST", "OPTIONS"],  # OPTIONS für Preflight-Requests hinzufügen
     allow_headers=["*"],
 )
 

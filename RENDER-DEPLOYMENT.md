@@ -76,10 +76,47 @@ Für zusätzliche Sicherheit können Sie sensible Umgebungsvariablen (z.B. API-S
 
 ## Überprüfen des Deployments
 
-Nach dem erfolgreichen Deployment können Sie auf Ihre Anwendung über die von Render bereitgestellten URLs zugreifen:
+Nach dem erfolgreichen Deployment können Sie die URLs der bereitgestellten Dienste überprüfen:
 
-- Frontend: `https://kick-predictor-frontend.onrender.com`
-- Backend: `https://kick-predictor-backend.onrender.com`
+```bash
+# Für Backend
+gcloud run services describe kick-predictor-backend --region=europe-west3 --format='value(status.url)'
+
+# Für Frontend
+gcloud run services describe kick-predictor-frontend --region=europe-west3 --format='value(status.url)'
+```
+
+### API-Verbindung testen
+
+1. **Backend Health Check:**
+   ```
+   https://kick-predictor-backend.onrender.com/health
+   ```
+   Sollte `{"status": "online"}` zurückgeben
+
+2. **API Test-Endpoint:**
+   ```
+   https://kick-predictor-backend.onrender.com/api/test
+   ```
+   Sollte eine Erfolgs-Nachricht zurückgeben
+
+3. **Frontend im Browser öffnen:**
+   ```
+   https://kick-predictor-frontend.onrender.com
+   ```
+
+### Debugging von API-Problemen
+
+Falls das Frontend keine Daten lädt:
+
+1. **Browser-Konsole öffnen** (F12 → Console)
+2. **Suchen Sie nach Log-Meldungen:**
+   ```
+   API_URL configured as: ...
+   Fetching next matchday from: ...
+   ```
+3. **Prüfen Sie auf CORS-Fehler oder 404/500 Status Codes**
+4. **Konsultieren Sie die API-DEBUG.md für detaillierte Fehlerbehebung**
 
 ## Fehlerbehebung
 

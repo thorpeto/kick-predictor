@@ -5,6 +5,17 @@ from app import data_service, prediction_service
 
 router = APIRouter(prefix="/api", tags=["Bundesliga"])
 
+@router.get("/test")
+async def test_connection():
+    """
+    Test-Endpoint um die API-Verbindung zu überprüfen
+    """
+    return {
+        "status": "success",
+        "message": "API-Verbindung funktioniert!",
+        "service": "Kick Predictor Backend"
+    }
+
 @router.get("/next-matchday", response_model=List[Match])
 async def get_next_matchday():
     """
