@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage'
 import PredictionsPage from './pages/PredictionsPage'
 import TeamAnalysisPage from './pages/TeamAnalysisPage'
 import AboutPage from './pages/AboutPage'
+import ApiDebugPage from './pages/ApiDebugPage'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="predictions" element={<PredictionsPage />} />
         <Route path="team-analysis" element={<TeamAnalysisPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route path="api-debug" element={<ApiDebugPage />} />
       </Route>
     </Routes>
   )

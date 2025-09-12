@@ -45,6 +45,11 @@ Dieser Fehler tritt auf, wenn ein Befehl nicht gefunden werden kann, oft wegen B
    - Überprüfen Sie, ob alle benötigten Abhängigkeiten in `dependencies` (nicht nur in `devDependencies`) aufgeführt sind
    - Render setzt `NODE_ENV=production`, was dazu führt, dass devDependencies nicht installiert werden
 
+5. **Fehlende Icons/Assets:**
+   - Icons und andere statische Assets müssen im `/public/` Verzeichnis liegen
+   - Pfade zu Assets sollten absolute Pfade sein (z.B. `/logo.svg` statt `/src/assets/logo.svg`)
+   - Der Build-Prozess kopiert nur Dateien aus `/public/` in das finale Bundle
+
 ## Render-Logs überprüfen
 
 Die detailliertesten Informationen finden Sie in den Build- und Deployment-Logs auf der Render-Plattform:

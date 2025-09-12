@@ -15,7 +15,12 @@ app = FastAPI(
 
 # CORS-Einstellungen für Frontend-Verbindung
 # Definiere erlaubte Ursprünge basierend auf der Umgebungsvariable
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
+if allowed_origins_str == "*":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = allowed_origins_str.split(",") if allowed_origins_str else []
+
 if not allowed_origins or allowed_origins[0] == "":
     # Standard-Ursprünge für Entwicklung oder wenn keine definiert sind
     allowed_origins = [
@@ -28,6 +33,7 @@ if not allowed_origins or allowed_origins[0] == "":
 
 # Für Debugging in der Produktionsumgebung
 print(f"CORS allowed origins: {allowed_origins}")
+print(f"Environment: {os.getenv('ENVIRONMENT', 'development')}")
 
 app.add_middleware(
     CORSMiddleware,

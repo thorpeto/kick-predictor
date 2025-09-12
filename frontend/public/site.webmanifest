@@ -1,0 +1,22 @@
+{
+  "name": "Kick Predictor",
+  "short_name": "KickPredictor",
+  "description": "Vorhersage von Bundesliga-Spielergebnissen",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001e50",
+  "theme_color": "#d20515",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -16,7 +16,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <img 
-                src="/src/assets/soccer-ball.svg" 
+                src="/logo.svg" 
                 alt="Kick Predictor Logo" 
                 className="h-8 w-8 mr-2" 
               />
@@ -59,6 +59,16 @@ const Navbar = () => {
             >
               Über uns
             </NavLink>
+            {(import.meta.env.MODE === 'development' || window.location.hostname.includes('onrender.com')) && (
+              <NavLink 
+                to="/api-debug" 
+                className={({ isActive }) => 
+                  isActive ? 'font-bold border-b-2 border-bundesliga-red' : 'hover:text-gray-300'
+                }
+              >
+                API Debug
+              </NavLink>
+            )}
           </div>
           
           {/* Mobile Menu Button */}
@@ -116,6 +126,17 @@ const Navbar = () => {
             >
               Über uns
             </NavLink>
+            {(import.meta.env.MODE === 'development' || window.location.hostname.includes('onrender.com')) && (
+              <NavLink 
+                to="/api-debug" 
+                className={({ isActive }) => 
+                  `block py-2 px-4 ${isActive ? 'bg-bundesliga-red font-bold' : 'hover:bg-gray-700'}`
+                }
+                onClick={toggleMenu}
+              >
+                API Debug
+              </NavLink>
+            )}
           </div>
         )}
       </div>
