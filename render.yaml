@@ -24,7 +24,7 @@ services:
   - type: web
     name: kick-predictor-frontend
     env: node
-    buildCommand: npm install && npm run build
+    buildCommand: NODE_ENV=development npm install && npm run build
     startCommand: npx serve -s dist -l $PORT
     repo: https://github.com/thorpeto/kick-predictor.git
     branch: main
@@ -35,5 +35,7 @@ services:
         value: production
       - key: VITE_API_URL
         value: https://kick-predictor-backend.onrender.com
+      - key: NODE_VERSION
+        value: 18.17.1  # LTS-Version, die noch unterstützt wird
     autoDeploy: true
     plan: free  # Ändern Sie dies nach Bedarf (free, starter, etc.)

@@ -37,13 +37,14 @@ Diese Anleitung beschreibt, wie Sie die Kick Predictor App auf [Render.com](http
    - **Name**: `kick-predictor-frontend`
    - **Root Directory**: `frontend`
    - **Environment**: `Node`
-   - **Build Command**: `npm install && npm run build`
+   - **Build Command**: `NODE_ENV=development npm install && npm run build`
    - **Start Command**: `npx serve -s dist -l $PORT`
    - **Plan**: Wählen Sie den entsprechenden Plan (z.B. Free)
 
 4. Fügen Sie die Umgebungsvariablen hinzu:
    - `NODE_ENV`: `production`
    - `VITE_API_URL`: `https://kick-predictor-backend.onrender.com` (ersetzen Sie dies mit der tatsächlichen URL Ihres Backend-Services)
+   - `NODE_VERSION`: `18.17.1` (stellen Sie sicher, dass Sie eine unterstützte Version verwenden)
 
 5. Klicken Sie auf "Create Web Service"
 

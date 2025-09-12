@@ -26,16 +26,22 @@ Dieser Fehler tritt auf, wenn ein Befehl nicht gefunden werden kann, oft wegen B
 
 ### Node.js-spezifische Probleme
 
-1. **npm-Fehler mit package-lock.json:**
+1. **Node.js-Version veraltet:**
+   - Fehler wie `Node.js version 18.12.1 has reached end-of-life` weisen auf eine veraltete Node.js-Version hin
+   - Aktualisieren Sie die `.node-version`-Datei auf eine unterstützte Version (z.B. 18.17.1)
+   - Oder setzen Sie die `NODE_VERSION`-Umgebungsvariable in der Render-Konfiguration
+
+2. **npm-Fehler mit package-lock.json:**
    - Fehler wie `Missing: serve@14.2.5 from lock file` weisen auf eine Diskrepanz zwischen package.json und package-lock.json hin
    - Verwenden Sie `npm install` statt `npm ci` im Build-Befehl, um die package-lock.json automatisch zu aktualisieren
    - Alternativ können Sie lokal `npm install` ausführen und die aktualisierte package-lock.json committen
 
-2. **Serve-Fehler:** 
-   - Stellen Sie sicher, dass `serve` in den Abhängigkeiten in `package.json` aufgeführt ist
-   - Bei Bedarf installieren: `npm install serve --save`
+3. **Build-Tool nicht gefunden:**
+   - Fehler wie `vite: not found` weisen darauf hin, dass Build-Tools nicht verfügbar sind
+   - Verschieben Sie alle für den Build benötigten Pakete von `devDependencies` nach `dependencies`
+   - Oder setzen Sie `NODE_ENV=development` beim Build-Befehl: `NODE_ENV=development npm install && npm run build`
 
-3. **Fehlende Abhängigkeiten:**
+4. **Fehlende Abhängigkeiten:**
    - Überprüfen Sie, ob alle benötigten Abhängigkeiten in `dependencies` (nicht nur in `devDependencies`) aufgeführt sind
    - Render setzt `NODE_ENV=production`, was dazu führt, dass devDependencies nicht installiert werden
 
