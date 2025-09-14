@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
 from datetime import datetime
 
@@ -28,6 +28,18 @@ class FormFactor(BaseModel):
     away_form: float
     home_xg_last_6: float
     away_xg_last_6: float
+
+class TableEntry(BaseModel):
+    position: int
+    team: Team
+    matches_played: int
+    wins: int
+    draws: int
+    losses: int
+    goals_for: int
+    goals_against: int
+    goal_difference: int
+    points: int
 
 class Prediction(BaseModel):
     match: Match

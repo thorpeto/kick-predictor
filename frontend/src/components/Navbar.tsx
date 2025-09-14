@@ -52,6 +52,14 @@ const Navbar = () => {
               Team-Analyse
             </NavLink>
             <NavLink 
+              to="/table" 
+              className={({ isActive }) => 
+                isActive ? 'font-bold border-b-2 border-bundesliga-red' : 'hover:text-gray-300'
+              }
+            >
+              Tabelle
+            </NavLink>
+            <NavLink 
               to="/about" 
               className={({ isActive }) => 
                 isActive ? 'font-bold border-b-2 border-bundesliga-red' : 'hover:text-gray-300'
@@ -59,16 +67,6 @@ const Navbar = () => {
             >
               Über uns
             </NavLink>
-            {(import.meta.env.MODE === 'development' || window.location.hostname.includes('onrender.com')) && (
-              <NavLink 
-                to="/api-debug" 
-                className={({ isActive }) => 
-                  isActive ? 'font-bold border-b-2 border-bundesliga-red' : 'hover:text-gray-300'
-                }
-              >
-                API Debug
-              </NavLink>
-            )}
           </div>
           
           {/* Mobile Menu Button */}
@@ -118,6 +116,15 @@ const Navbar = () => {
               Team-Analyse
             </NavLink>
             <NavLink 
+              to="/table" 
+              className={({ isActive }) => 
+                `block py-2 px-4 ${isActive ? 'bg-bundesliga-red font-bold' : 'hover:bg-gray-700'}`
+              }
+              onClick={toggleMenu}
+            >
+              Tabelle
+            </NavLink>
+            <NavLink 
               to="/about" 
               className={({ isActive }) => 
                 `block py-2 px-4 ${isActive ? 'bg-bundesliga-red font-bold' : 'hover:bg-gray-700'}`
@@ -126,17 +133,6 @@ const Navbar = () => {
             >
               Über uns
             </NavLink>
-            {(import.meta.env.MODE === 'development' || window.location.hostname.includes('onrender.com')) && (
-              <NavLink 
-                to="/api-debug" 
-                className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-bundesliga-red font-bold' : 'hover:bg-gray-700'}`
-                }
-                onClick={toggleMenu}
-              >
-                API Debug
-              </NavLink>
-            )}
           </div>
         )}
       </div>

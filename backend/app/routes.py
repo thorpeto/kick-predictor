@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from app.models.schemas import Match, Prediction, MatchResult
+from app.models.schemas import Match, Prediction, MatchResult, TableEntry
 from app import data_service, prediction_service
 
-router = APIRouter(prefix="/api", tags=["Bundesliga"])
+router = APIRouter(tags=["Bundesliga"])
 
 @router.get("/test")
 async def test_connection():
@@ -62,3 +62,14 @@ async def get_team_matches(team_id: int):
         return matches
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler beim Abrufen der Spiele: {str(e)}")
+
+@router.get("/table", response_model=List[TableEntry])
+async def get_current_table():
+    """
+    Liefert die aktuelle Bundesliga-Tabelle
+    """
+    try:
+        table = await data_service.get_current_table()
+        return table
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Abrufen der Tabelle: {str(e)}")

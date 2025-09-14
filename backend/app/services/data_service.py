@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
-from app.models.schemas import Match, MatchResult, Prediction, FormFactor, Team
+from app.models.schemas import Match, MatchResult, Prediction, FormFactor, Team, TableEntry
 from app.services.openliga_client import OpenLigaDBClient
 from app.services.data_converter import DataConverter
 import logging
@@ -154,3 +154,114 @@ class DataService:
         except Exception as e:
             logger.error(f"Fehler bei der Formberechnung für Team-ID {team_id}: {str(e)}")
             return 0.5  # Verwende neutrale Form statt Zufallswert
+
+    async def get_current_table(self) -> List[TableEntry]:
+        """
+        Berechnet die aktuelle Bundesliga-Tabelle basierend auf den Spielergebnissen
+        """
+        try:
+            async with OpenLigaDBClient() as client:
+                # Hole alle Spiele der aktuellen Saison
+                all_matches = await client.get_matches_by_league_season(self.league, self.season)
+                
+                # Dictionary für Team-Statistiken
+                team_stats = {}
+                teams_dict = {}
+                
+                # Verarbeite alle beendeten Spiele
+                for match_data in all_matches:
+                    if not match_data.get('matchIsFinished', False):
+                        continue
+                    
+                    home_team_data = match_data.get('team1', {})
+                    away_team_data = match_data.get('team2', {})
+                    
+                    home_team_id = home_team_data.get('teamId')
+                    away_team_id = away_team_data.get('teamId')
+                    
+                    # Teams zu Dictionary hinzufügen
+                    if home_team_id not in teams_dict:
+                        teams_dict[home_team_id] = DataConverter.convert_team(home_team_data)
+                    if away_team_id not in teams_dict:
+                        teams_dict[away_team_id] = DataConverter.convert_team(away_team_data)
+                    
+                    # Initialisiere Team-Statistiken falls nicht vorhanden
+                    for team_id in [home_team_id, away_team_id]:
+                        if team_id not in team_stats:
+                            team_stats[team_id] = {
+                                'matches_played': 0,
+                                'wins': 0,
+                                'draws': 0,
+                                'losses': 0,
+                                'goals_for': 0,
+                                'goals_against': 0,
+                                'points': 0
+                            }
+                    
+                    # Ergebnis extrahieren
+                    results = match_data.get('matchResults', [])
+                    final_result = next((r for r in results if r.get('resultTypeID') == 2), None)
+                    
+                    if not final_result:
+                        continue
+                    
+                    home_goals = final_result.get('pointsTeam1', 0)
+                    away_goals = final_result.get('pointsTeam2', 0)
+                    
+                    # Statistiken aktualisieren
+                    team_stats[home_team_id]['matches_played'] += 1
+                    team_stats[away_team_id]['matches_played'] += 1
+                    
+                    team_stats[home_team_id]['goals_for'] += home_goals
+                    team_stats[home_team_id]['goals_against'] += away_goals
+                    team_stats[away_team_id]['goals_for'] += away_goals
+                    team_stats[away_team_id]['goals_against'] += home_goals
+                    
+                    # Punkte vergeben
+                    if home_goals > away_goals:  # Heimsieg
+                        team_stats[home_team_id]['wins'] += 1
+                        team_stats[home_team_id]['points'] += 3
+                        team_stats[away_team_id]['losses'] += 1
+                    elif home_goals < away_goals:  # Auswärtssieg
+                        team_stats[away_team_id]['wins'] += 1
+                        team_stats[away_team_id]['points'] += 3
+                        team_stats[home_team_id]['losses'] += 1
+                    else:  # Unentschieden
+                        team_stats[home_team_id]['draws'] += 1
+                        team_stats[home_team_id]['points'] += 1
+                        team_stats[away_team_id]['draws'] += 1
+                        team_stats[away_team_id]['points'] += 1
+                
+                # Erstelle Tabelleneintrage
+                table_entries = []
+                for team_id, stats in team_stats.items():
+                    if team_id in teams_dict:
+                        goal_difference = stats['goals_for'] - stats['goals_against']
+                        
+                        entry = TableEntry(
+                            position=0,  # Wird später sortiert
+                            team=teams_dict[team_id],
+                            matches_played=stats['matches_played'],
+                            wins=stats['wins'],
+                            draws=stats['draws'],
+                            losses=stats['losses'],
+                            goals_for=stats['goals_for'],
+                            goals_against=stats['goals_against'],
+                            goal_difference=goal_difference,
+                            points=stats['points']
+                        )
+                        table_entries.append(entry)
+                
+                # Sortiere nach Punkten, dann nach Tordifferenz, dann nach erzielten Toren
+                table_entries.sort(key=lambda x: (-x.points, -x.goal_difference, -x.goals_for))
+                
+                # Setze Positionen
+                for i, entry in enumerate(table_entries):
+                    entry.position = i + 1
+                
+                logger.info(f"Tabelle berechnet mit {len(table_entries)} Teams")
+                return table_entries
+                
+        except Exception as e:
+            logger.error(f"Fehler beim Berechnen der Tabelle: {str(e)}")
+            return []
