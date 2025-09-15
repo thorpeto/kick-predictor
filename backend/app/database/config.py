@@ -12,18 +12,36 @@ logger = logging.getLogger(__name__)
 
 class DatabaseConfig:
     def __init__(self):
-        # SQLite Database Path - verwende app-Verzeichnis für Docker
-        default_path = '/app/data/kick_predictor.db' if os.path.exists('/app') else '/workspaces/kick-predictor/backend/kick_predictor.db'
-        self.db_path = os.getenv('DATABASE_PATH', default_path)
+        # Verwende DATABASE_URL wenn gesetzt (für Render), sonst umgebungsabhängige Pfade
+        database_url = os.getenv('DATABASE_URL')
         
-        # Stelle sicher, dass das Verzeichnis existiert
+        if database_url:
+            # Für Render oder andere Cloud-Deployments
+            self.database_url = database_url
+            # Extrahiere Pfad aus sqlite:////app/data/kick_predictor.db Format
+            if database_url.startswith('sqlite:///'):
+                self.db_path = database_url[10:]  # Entferne 'sqlite:///'
+            else:
+                self.db_path = database_url
+        else:
+            # Lokale Entwicklung - umgebungsabhängige Pfade
+            if os.path.exists('/app'):
+                # Docker-Umgebung
+                self.db_path = '/app/data/kick_predictor.db'
+            else:
+                # Dev-Container oder lokale Entwicklung
+                self.db_path = '/workspaces/kick-predictor/backend/kick_predictor.db'
+            
+            self.database_url = f"sqlite:///{self.db_path}"
+        
+        # Stelle sicher, dass das Verzeichnis existiert (nur wenn beschreibbar)
         db_dir = os.path.dirname(self.db_path)
-        if not os.path.exists(db_dir):
-            os.makedirs(db_dir, exist_ok=True)
-            logger.info(f"Created database directory: {db_dir}")
-        
-        # SQLite Connection String
-        self.database_url = f"sqlite:///{self.db_path}"
+        try:
+            if not os.path.exists(db_dir):
+                os.makedirs(db_dir, exist_ok=True)
+                logger.info(f"Created database directory: {db_dir}")
+        except PermissionError:
+            logger.warning(f"Cannot create database directory {db_dir}, assuming it exists or will be created by deployment")
         
         # Engine Configuration
         self.engine = create_engine(

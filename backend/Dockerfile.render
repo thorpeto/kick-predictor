@@ -18,12 +18,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
-# Create data directory for SQLite database (will be mounted from Render disk)
-RUN mkdir -p /app/data && chmod 755 /app/data
-
 # Create non-root user for security
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
+RUN useradd -m -u 1000 appuser
+
+# Create data directory for SQLite database (will be mounted from Render disk)
+RUN mkdir -p /app/data && chmod 755 /app/data && chown -R appuser:appuser /app
+
 USER appuser
 
 # Expose port (Render will set PORT env var)

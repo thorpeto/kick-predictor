@@ -1,11 +1,27 @@
 import os
+import logging
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import router
 
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Lade Umgebungsvariablen
 load_dotenv()
+
+# Initialisiere Datenbank früh im Startup-Prozess
+try:
+    from app.database.config import init_database
+    init_database()
+    logger.info("Database initialization successful")
+except Exception as e:
+    logger.error(f"Database initialization failed: {str(e)}")
+    # In Produktion nicht abbrechen - manchmal wird die DB später gemountet
+    if os.getenv("ENVIRONMENT") != "production":
+        raise
 
 app = FastAPI(
     title="Kick Predictor API",
