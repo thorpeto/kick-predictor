@@ -1,5 +1,10 @@
 """
-Database Configuration und Session Management
+Database Configu            # Extrahiere Pfad aus sqlite:////app/data/kick_predictor.db Format
+            if database_url.startswith('sqlite:////'):
+                # Absoluter Pfad mit vier Slashes: sqlite:////app/data/file.db -> //app/data/file.db -> /app/data/file.db
+                self.db_path = database_url[8:].lstrip('/')  # Entferne 'sqlite://' und führende Slashes
+                if not self.db_path.startswith('/'):
+                    self.db_path = '/' + self.db_pathon und Session Management
 """
 import os
 from sqlalchemy import create_engine
@@ -19,7 +24,12 @@ class DatabaseConfig:
             # Für Render oder andere Cloud-Deployments
             self.database_url = database_url
             # Extrahiere Pfad aus sqlite:////app/data/kick_predictor.db Format
-            if database_url.startswith('sqlite:///'):
+            if database_url.startswith('sqlite:////'):
+                # Absoluter Pfad mit vier Slashes: sqlite:////app/data/file.db -> /app/data/file.db
+                path_part = database_url[8:].lstrip('/')  # Entferne 'sqlite://' und führende Slashes
+                self.db_path = '/' + path_part if not path_part.startswith('/') else path_part
+            elif database_url.startswith('sqlite:///'):
+                # Relativer Pfad mit drei Slashes
                 self.db_path = database_url[10:]  # Entferne 'sqlite:///'
             else:
                 self.db_path = database_url

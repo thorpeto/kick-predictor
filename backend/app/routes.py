@@ -3,15 +3,11 @@ from typing import List, Optional
 from datetime import datetime
 from app.models.schemas import Match, Prediction, MatchResult, TableEntry, MatchdayInfo, PredictionQualityEntry, PredictionQualityStats
 from app import data_service, prediction_service
-from app.database.config import init_database
 from app.database.database_service import DatabaseService
 import logging
 
 router = APIRouter(tags=["Bundesliga"])
 logger = logging.getLogger(__name__)
-
-# Initialize database on startup
-init_database()
 
 @router.get("/test")
 async def test_connection():

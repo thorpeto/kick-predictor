@@ -12,15 +12,26 @@ logger = logging.getLogger(__name__)
 # Lade Umgebungsvariablen
 load_dotenv()
 
-# Initialisiere Datenbank früh im Startup-Prozess
+# Initialisiere Datenbank früh im Startup-Prozess mit Retry-Logik
 try:
     from app.database.config import init_database
     init_database()
     logger.info("Database initialization successful")
 except Exception as e:
     logger.error(f"Database initialization failed: {str(e)}")
-    # In Produktion nicht abbrechen - manchmal wird die DB später gemountet
-    if os.getenv("ENVIRONMENT") != "production":
+    # In Produktion versuche es nochmal nach kurzer Wartezeit (für Render Disk Mount)
+    if os.getenv("ENVIRONMENT") == "production":
+        import time
+        from app.database.config import init_database as retry_init_database
+        logger.info("Retrying database initialization in 5 seconds...")
+        time.sleep(5)
+        try:
+            retry_init_database()
+            logger.info("Database initialization successful on retry")
+        except Exception as retry_error:
+            logger.error(f"Database initialization failed on retry: {str(retry_error)}")
+            # Continue anyway - database will be initialized on first request
+    else:
         raise
 
 app = FastAPI(
