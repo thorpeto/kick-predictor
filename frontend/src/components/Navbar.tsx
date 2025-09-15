@@ -60,6 +60,14 @@ const Navbar = () => {
               Tabelle
             </NavLink>
             <NavLink 
+              to="/quality" 
+              className={({ isActive }) => 
+                isActive ? 'font-bold border-b-2 border-bundesliga-red' : 'hover:text-gray-300'
+              }
+            >
+              Qualität
+            </NavLink>
+            <NavLink 
               to="/about" 
               className={({ isActive }) => 
                 isActive ? 'font-bold border-b-2 border-bundesliga-red' : 'hover:text-gray-300'
@@ -123,6 +131,15 @@ const Navbar = () => {
               onClick={toggleMenu}
             >
               Tabelle
+            </NavLink>
+            <NavLink 
+              to="/quality" 
+              className={({ isActive }) => 
+                `block py-2 px-4 ${isActive ? 'bg-bundesliga-red font-bold' : 'hover:bg-gray-700'}`
+              }
+              onClick={toggleMenu}
+            >
+              Qualität
             </NavLink>
             <NavLink 
               to="/about" 

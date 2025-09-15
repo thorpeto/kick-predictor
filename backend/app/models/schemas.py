@@ -1,6 +1,12 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
 from datetime import datetime
+from enum import Enum
+
+class HitType(str, Enum):
+    EXACT_MATCH = "exact_match"  # Exakte Ergebnis-Übereinstimmung
+    TENDENCY_MATCH = "tendency_match"  # Tendenz richtig (Sieg/Unentschieden/Niederlage)
+    MISS = "miss"  # Komplett falsch
 
 class Team(BaseModel):
     id: int
@@ -54,3 +60,24 @@ class Prediction(BaseModel):
     away_win_prob: float
     predicted_score: str
     form_factors: FormFactor
+
+class PredictionQualityEntry(BaseModel):
+    match: Match
+    predicted_score: str
+    actual_score: str
+    predicted_home_win_prob: float
+    predicted_draw_prob: float
+    predicted_away_win_prob: float
+    hit_type: HitType
+    tendency_correct: bool
+    exact_score_correct: bool
+
+class PredictionQualityStats(BaseModel):
+    total_predictions: int
+    exact_matches: int
+    tendency_matches: int
+    misses: int
+    exact_match_rate: float
+    tendency_match_rate: float
+    overall_accuracy: float
+    quality_score: float  # Gewichteter Score: 3 Punkte für Volltreffer, 1 Punkt für Tendenz

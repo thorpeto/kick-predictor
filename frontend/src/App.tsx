@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage'
 import PredictionsPage from './pages/PredictionsPage'
 import TeamAnalysisPage from './pages/TeamAnalysisPage'
 import TablePage from './pages/TablePage'
+import QualityPage from './pages/QualityPage'
 import AboutPage from './pages/AboutPage'
 import ApiDebugPage from './pages/ApiDebugPage'
 
@@ -16,6 +17,7 @@ function App() {
         <Route path="predictions" element={<PredictionsPage />} />
         <Route path="team-analysis" element={<TeamAnalysisPage />} />
         <Route path="table" element={<TablePage />} />
+        <Route path="quality" element={<QualityPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="api-debug" element={<ApiDebugPage />} />
       </Route>

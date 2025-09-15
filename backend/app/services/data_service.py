@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
-from app.models.schemas import Match, MatchResult, Prediction, FormFactor, Team, TableEntry, MatchdayInfo
+from app.models.schemas import Match, MatchResult, Prediction, FormFactor, Team, TableEntry, MatchdayInfo, PredictionQualityEntry, PredictionQualityStats, HitType
 from app.services.openliga_client import OpenLigaDBClient
 from app.services.data_converter import DataConverter
 import logging
@@ -447,3 +447,166 @@ class DataService:
             self._predictions_cache.clear()
             self._cache_expiry.clear()
             logger.info("Gesamter Vorhersagen-Cache gelöscht")
+
+    async def get_prediction_quality(self) -> Dict:
+        """
+        Analysiert die Qualität der Vorhersagen durch Vergleich mit realen Ergebnissen
+        """
+        try:
+            async with OpenLigaDBClient() as client:
+                # Hole alle Spiele der aktuellen Saison
+                all_matches = await client.get_matches_by_league_season(self.league, self.season)
+                
+                quality_entries = []
+                
+                # Analysiere nur abgeschlossene Spiele der ersten 3 Spieltage
+                for match_data in all_matches:
+                    matchday = match_data.get('matchday', 1)
+                    is_finished = match_data.get('matchIsFinished', False)
+                    
+                    # Nur abgeschlossene Spiele der ersten 3 Spieltage analysieren
+                    if not is_finished or matchday > 3:
+                        continue
+                    
+                    # Konvertiere Match-Daten
+                    match = DataConverter.convert_match(match_data)
+                    if not match:
+                        continue
+                    
+                    # Simuliere eine Vorhersage für dieses Spiel (normalerweise würden wir gespeicherte Vorhersagen haben)
+                    prediction = await self._simulate_prediction_for_match(match)
+                    
+                    # Extrahiere reales Ergebnis
+                    match_results = match_data.get('matchResults', [])
+                    if not match_results:
+                        continue
+                    
+                    final_result = match_results[-1]  # Endergebnis
+                    home_goals = final_result.get('pointsTeam1', 0)
+                    away_goals = final_result.get('pointsTeam2', 0)
+                    actual_score = f"{home_goals}:{away_goals}"
+                    
+                    # Bestimme Treffertyp
+                    hit_type, tendency_correct, exact_correct = self._analyze_prediction_accuracy(
+                        prediction.predicted_score, 
+                        actual_score,
+                        prediction.home_win_prob,
+                        prediction.draw_prob,
+                        prediction.away_win_prob
+                    )
+                    
+                    quality_entry = PredictionQualityEntry(
+                        match=match,
+                        predicted_score=prediction.predicted_score,
+                        actual_score=actual_score,
+                        predicted_home_win_prob=prediction.home_win_prob,
+                        predicted_draw_prob=prediction.draw_prob,
+                        predicted_away_win_prob=prediction.away_win_prob,
+                        hit_type=hit_type,
+                        tendency_correct=tendency_correct,
+                        exact_score_correct=exact_correct
+                    )
+                    
+                    quality_entries.append(quality_entry)
+                
+                # Berechne Statistiken
+                stats = self._calculate_quality_stats(quality_entries)
+                
+                return {
+                    "entries": quality_entries,
+                    "stats": stats
+                }
+                
+        except Exception as e:
+            logger.error(f"Fehler beim Berechnen der Vorhersagequalität: {str(e)}")
+            return {"entries": [], "stats": None}
+    
+    async def _simulate_prediction_for_match(self, match: Match) -> Prediction:
+        """
+        Simuliert eine Vorhersage für ein vergangenes Spiel (für Demo-Zwecke)
+        In einer echten Implementierung würden hier gespeicherte Vorhersagen abgerufen
+        """
+        # Import hier um Zirkelbezug zu vermeiden
+        from app.services.prediction_service import PredictionService
+        prediction_service = PredictionService(self)
+        
+        return await prediction_service.predict_match(match)
+    
+    def _analyze_prediction_accuracy(self, predicted_score: str, actual_score: str, 
+                                   home_win_prob: float, draw_prob: float, away_win_prob: float) -> tuple:
+        """
+        Analysiert die Genauigkeit einer Vorhersage
+        """
+        # Prüfe auf exakte Übereinstimmung
+        exact_correct = predicted_score == actual_score
+        if exact_correct:
+            return HitType.EXACT_MATCH, True, True
+        
+        # Extrahiere Tore aus den Scores
+        try:
+            pred_home, pred_away = map(int, predicted_score.split(':'))
+            actual_home, actual_away = map(int, actual_score.split(':'))
+        except:
+            return HitType.MISS, False, False
+        
+        # Bestimme Tendenzen
+        pred_tendency = self._get_match_tendency(pred_home, pred_away)
+        actual_tendency = self._get_match_tendency(actual_home, actual_away)
+        
+        # Prüfe auf Tendenz-Übereinstimmung
+        tendency_correct = pred_tendency == actual_tendency
+        
+        if tendency_correct:
+            return HitType.TENDENCY_MATCH, True, False
+        else:
+            return HitType.MISS, False, False
+    
+    def _get_match_tendency(self, home_goals: int, away_goals: int) -> str:
+        """
+        Bestimmt die Tendenz eines Spiels (Heimsieg, Unentschieden, Auswärtssieg)
+        """
+        if home_goals > away_goals:
+            return "home_win"
+        elif home_goals < away_goals:
+            return "away_win"
+        else:
+            return "draw"
+    
+    def _calculate_quality_stats(self, entries: List[PredictionQualityEntry]) -> PredictionQualityStats:
+        """
+        Berechnet Qualitätsstatistiken basierend auf den Vorhersageeinträgen
+        """
+        if not entries:
+            return PredictionQualityStats(
+                total_predictions=0,
+                exact_matches=0,
+                tendency_matches=0,
+                misses=0,
+                exact_match_rate=0.0,
+                tendency_match_rate=0.0,
+                overall_accuracy=0.0,
+                quality_score=0.0
+            )
+        
+        total = len(entries)
+        exact_matches = len([e for e in entries if e.hit_type == HitType.EXACT_MATCH])
+        tendency_matches = len([e for e in entries if e.hit_type == HitType.TENDENCY_MATCH])
+        misses = len([e for e in entries if e.hit_type == HitType.MISS])
+        
+        exact_rate = exact_matches / total
+        tendency_rate = tendency_matches / total
+        overall_accuracy = (exact_matches + tendency_matches) / total
+        
+        # Qualitätsscore: 3 Punkte für Volltreffer, 1 Punkt für Tendenz
+        quality_score = (exact_matches * 3 + tendency_matches * 1) / (total * 3)
+        
+        return PredictionQualityStats(
+            total_predictions=total,
+            exact_matches=exact_matches,
+            tendency_matches=tendency_matches,
+            misses=misses,
+            exact_match_rate=round(exact_rate, 3),
+            tendency_match_rate=round(tendency_rate, 3),
+            overall_accuracy=round(overall_accuracy, 3),
+            quality_score=round(quality_score, 3)
+        )

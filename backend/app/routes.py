@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
-from app.models.schemas import Match, Prediction, MatchResult, TableEntry, MatchdayInfo
+from app.models.schemas import Match, Prediction, MatchResult, TableEntry, MatchdayInfo, PredictionQualityEntry, PredictionQualityStats
 from app import data_service, prediction_service
 
 router = APIRouter(tags=["Bundesliga"])
@@ -98,3 +98,14 @@ async def clear_predictions_cache(matchday: Optional[int] = Query(None, descript
             return {"status": "success", "message": "Gesamter Vorhersagen-Cache gelöscht"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler beim Löschen des Caches: {str(e)}")
+
+@router.get("/prediction-quality")
+async def get_prediction_quality():
+    """
+    Liefert eine Analyse der Vorhersagequalität durch Vergleich mit realen Ergebnissen
+    """
+    try:
+        quality_data = await data_service.get_prediction_quality()
+        return quality_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Abrufen der Vorhersagequalität: {str(e)}")

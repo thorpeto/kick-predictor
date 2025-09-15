@@ -87,6 +87,8 @@ const buildApiUrl = (endpoint: string): string => {
   return `${base}${endpoint}`;
 }
 
+export { buildApiUrl };
+
 console.log('API Base configured as:', getApiBase());
 
 export const fetchNextMatchday = async (): Promise<Match[]> => {
