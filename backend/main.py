@@ -17,6 +17,37 @@ try:
     from app.database.config import init_database
     init_database()
     logger.info("Database initialization successful")
+    
+    # Auto-Sync beim Start wenn aktiviert (für Render temporäre DB)
+    if os.getenv("AUTO_SYNC_ON_START") == "true":
+        logger.info("Auto-sync on start enabled, triggering background sync...")
+        try:
+            import threading
+            import requests
+            import time
+            
+            def background_sync():
+                # Warte kurz bis Server vollständig gestartet ist
+                time.sleep(10)
+                try:
+                    port = os.getenv("PORT", "8000")
+                    # Triggere Full-Sync über internen API-Call
+                    response = requests.post(f"http://localhost:{port}/api/db/full-sync", timeout=300)
+                    if response.status_code == 200:
+                        logger.info("Auto-sync completed successfully")
+                    else:
+                        logger.error(f"Auto-sync failed with status {response.status_code}")
+                except Exception as e:
+                    logger.error(f"Auto-sync failed: {e}")
+            
+            # Starte Background-Sync
+            sync_thread = threading.Thread(target=background_sync, daemon=True)
+            sync_thread.start()
+            logger.info("Background sync scheduled")
+            
+        except Exception as e:
+            logger.error(f"Background sync setup failed: {e}")
+    
 except Exception as e:
     logger.error(f"Database initialization failed: {str(e)}")
     # In Produktion versuche es nochmal nach kurzer Wartezeit (für Render Disk Mount)
