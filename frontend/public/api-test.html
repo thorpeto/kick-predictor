@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Render API Connection Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing...</p>';
+            
+            const backendUrl = 'https://kick-predictor-backend.onrender.com';
+            
+            try {
+                console.log('Testing health endpoint...');
+                const response = await fetch(`${backendUrl}/health`);
+                const data = await response.json();
+                
+                results.innerHTML = `
+                    <h2>✅ Success!</h2>
+                    <p><strong>URL:</strong> ${backendUrl}/health</p>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Response:</strong> ${JSON.stringify(data)}</p>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <h2>❌ Error!</h2>
+                    <p><strong>URL:</strong> ${backendUrl}/health</p>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                `;
+                console.error('Error:', error);
+            }
+        }
+        
+        // Automatischer Test beim Laden
+        window.onload = testAPI;
+    </script>
+</body>
+</html>

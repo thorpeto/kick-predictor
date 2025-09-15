@@ -55,7 +55,7 @@ if not allowed_origins or allowed_origins[0] == "":
         "http://localhost:80",
         "http://localhost:3000",
         "https://kick-predictor-frontend.onrender.com",  # Render.com Frontend URL
-        "https://*.onrender.com",  # Alle Render.com Subdomains
+        "https://kick-predictor-frontend-*.onrender.com",  # Render Preview Deployments
     ]
 
 # Für Debugging in der Produktionsumgebung

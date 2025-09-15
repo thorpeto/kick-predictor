@@ -65,15 +65,26 @@ interface Prediction {
 // In der Produktionsumgebung sollte VITE_API_URL über Umgebungsvariablen gesetzt werden
 
 const getApiBase = (): string => {
+  // 1. Explizit gesetzte VITE_API_URL hat höchste Priorität
   if (import.meta.env.VITE_API_URL) {
+    console.log('Using VITE_API_URL:', import.meta.env.VITE_API_URL);
     return import.meta.env.VITE_API_URL;
   }
+  
+  // 2. Lokale Entwicklung
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('Using localhost backend');
     return 'http://localhost:8000';
   }
+  
+  // 3. Render.com Deployment - direkte Backend-URL verwenden
   if (window.location.hostname.includes('onrender.com')) {
+    console.log('Using Render backend URL');
     return 'https://kick-predictor-backend.onrender.com';
   }
+  
+  // 4. Fallback für nginx-Proxy (Docker Compose)
+  console.log('Using nginx proxy');
   return '/api';
 }
 
@@ -88,6 +99,40 @@ const buildApiUrl = (endpoint: string): string => {
 }
 
 export { buildApiUrl };
+
+// Configure axios defaults for better Render.com compatibility
+axios.defaults.timeout = 30000; // 30 seconds
+axios.defaults.headers.common['Content-Type'] = 'application/json';
+
+// Add request interceptor for debugging
+axios.interceptors.request.use(
+  (config) => {
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    return config;
+  },
+  (error) => {
+    console.error('API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for better error handling
+axios.interceptors.response.use(
+  (response) => {
+    console.log(`API Response: ${response.status} ${response.config.url}`);
+    return response;
+  },
+  (error) => {
+    if (error.response) {
+      console.error(`API Error: ${error.response.status} ${error.response.statusText} - ${error.config?.url}`);
+    } else if (error.request) {
+      console.error('API Network Error:', error.message, '- URL:', error.config?.url);
+    } else {
+      console.error('API Setup Error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 console.log('API Base configured as:', getApiBase());
 

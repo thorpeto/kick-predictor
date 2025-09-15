@@ -31,7 +31,8 @@ const HomePage = () => {
       setLoading(false)
     }
     if (matchesError) {
-      setError('Fehler beim Laden der Daten. Bitte versuchen Sie es später erneut.')
+      console.error('HomePage API Error:', matchesError);
+      setError(`Verbindung zum Backend fehlgeschlagen: ${matchesError}. Bitte versuchen Sie es später erneut.`)
     }
   }, [matchesLoading, matchesError])
 
@@ -66,7 +67,15 @@ const HomePage = () => {
         {loading ? (
           <p className="text-center">Lade Spieltag-Daten...</p>
         ) : error ? (
-          <p className="text-center text-red-600">{error}</p>
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <p className="text-sm text-gray-600">
+              Für weitere Informationen besuchen Sie die{' '}
+              <a href="/api-debug" className="text-blue-600 hover:underline">
+                Debug-Seite
+              </a>
+            </p>
+          </div>
         ) : upcomingData && upcomingData.matches && upcomingData.matches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {upcomingData.matches.map((match: Match) => (
