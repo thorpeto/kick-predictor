@@ -23,6 +23,9 @@ class DataService:
         # Cache für Vorhersagen (in-memory)
         self._predictions_cache: Dict[str, Dict] = {}
         self._cache_expiry: Dict[str, datetime] = {}
+        # Cache für Qualitätsdaten
+        self._quality_cache: Optional[Dict] = None
+        self._quality_cache_expiry: Optional[datetime] = None
     
     async def get_team_matches(self, team_id: int) -> List[MatchResult]:
         """
@@ -448,16 +451,36 @@ class DataService:
             self._cache_expiry.clear()
             logger.info("Gesamter Vorhersagen-Cache gelöscht")
 
+    def _is_quality_cache_valid(self) -> bool:
+        """Prüft, ob der Quality-Cache noch gültig ist (24 Stunden)"""
+        if not self._quality_cache or not self._quality_cache_expiry:
+            return False
+        return datetime.now() < self._quality_cache_expiry
+    
+    def _cache_quality_data(self, data: Dict) -> None:
+        """Speichert Quality-Daten im Cache für 24 Stunden"""
+        self._quality_cache = data
+        self._quality_cache_expiry = datetime.now() + timedelta(hours=24)
+        logger.info("Quality-Daten im Cache gespeichert (24h gültig)")
+
     async def get_prediction_quality(self) -> Dict:
         """
         Analysiert die Qualität der Vorhersagen durch Vergleich mit realen Ergebnissen
+        Nutzt Caching für bessere Performance
         """
+        # Prüfe zunächst den Cache (24 Stunden gültig)
+        if self._is_quality_cache_valid():
+            logger.info("Cache-Hit für Qualitätsdaten")
+            return self._quality_cache  # type: ignore
+        
         try:
+            logger.info("Lade neue Qualitätsdaten von der API...")
             async with OpenLigaDBClient() as client:
                 # Hole alle Spiele der aktuellen Saison
                 all_matches = await client.get_matches_by_league_season(self.league, self.season)
                 
                 quality_entries = []
+                processed_matches = 0
                 
                 # Analysiere nur abgeschlossene Spiele der ersten 3 Spieltage
                 for match_data in all_matches:
@@ -508,18 +531,31 @@ class DataService:
                     )
                     
                     quality_entries.append(quality_entry)
+                    processed_matches += 1
                 
                 # Berechne Statistiken
                 stats = self._calculate_quality_stats(quality_entries)
                 
-                return {
+                result = {
                     "entries": quality_entries,
-                    "stats": stats
+                    "stats": stats,
+                    "processed_matches": processed_matches,
+                    "cached_at": datetime.now().isoformat()
                 }
+                
+                # Speichere im Cache (24 Stunden gültig)
+                self._cache_quality_data(result)
+                
+                logger.info(f"Qualitätsdaten verarbeitet: {processed_matches} Spiele")
+                return result
                 
         except Exception as e:
             logger.error(f"Fehler beim Berechnen der Vorhersagequalität: {str(e)}")
-            return {"entries": [], "stats": None}
+            # Falls ein Fehler auftritt und wir haben Cache-Daten, verwende diese
+            if self._quality_cache:
+                logger.warning("Verwende veraltete Cache-Daten aufgrund von API-Fehler")
+                return self._quality_cache
+            return {"entries": [], "stats": None, "error": str(e)}
     
     async def _simulate_prediction_for_match(self, match: Match) -> Prediction:
         """

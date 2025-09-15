@@ -45,6 +45,8 @@ interface PredictionQualityStats {
 interface QualityData {
   entries: PredictionQualityEntry[];
   stats: PredictionQualityStats;
+  processed_matches?: number;
+  cached_at?: string;
 }
 
 const QualityPage = () => {
@@ -59,15 +61,47 @@ const QualityPage = () => {
   const fetchQualityData = async () => {
     try {
       setLoading(true)
+      setError(null)
       const url = buildApiUrl('/prediction-quality')
       console.log('Fetching quality data from:', url)
       
-      const response = await axios.get(url)
-      setQualityData(response.data)
-      setError(null)
-    } catch (err) {
+      const response = await axios.get(url, {
+        timeout: 30000 // 30 Sekunden Timeout
+      })
+      console.log('Response received:', response.status, response.statusText)
+      console.log('Data type:', typeof response.data)
+      console.log('Data keys:', Object.keys(response.data || {}))
+      
+      if (response.data && response.data.entries) {
+        console.log('Quality entries count:', response.data.entries.length)
+        console.log('Quality stats:', response.data.stats)
+        
+        // Prüfe auch, ob stats vorhanden ist
+        if (!response.data.stats) {
+          console.warn('No stats received from API')
+          setError('Keine Statistiken verfügbar. Die Daten werden möglicherweise noch verarbeitet.')
+          return
+        }
+        
+        setQualityData(response.data)
+      } else {
+        console.error('Unexpected data format:', response.data)
+        setError('Unerwartetes Datenformat erhalten.')
+      }
+    } catch (err: any) {
       console.error('Fehler beim Laden der Qualitätsdaten:', err)
-      setError('Fehler beim Laden der Daten. Bitte versuchen Sie es später erneut.')
+      console.error('Error message:', err.message)
+      console.error('Error response:', err.response)
+      
+      if (err.code === 'ECONNABORTED') {
+        setError('Timeout: Die Anfrage dauerte zu lange. Bitte versuchen Sie es erneut.')
+      } else if (err.response) {
+        setError(`Server-Fehler: ${err.response.status} ${err.response.statusText}`)
+      } else if (err.request) {
+        setError('Netzwerk-Fehler: Keine Antwort vom Server erhalten.')
+      } else {
+        setError('Fehler beim Laden der Daten. Bitte versuchen Sie es später erneut.')
+      }
     } finally {
       setLoading(false)
     }
@@ -124,9 +158,14 @@ const QualityPage = () => {
 
   if (loading) {
     return (
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-8">Vorhersagequalität</h1>
-        <p>Lade Qualitätsdaten...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Lade Qualitätsdaten...</p>
+          <p className="mt-2 text-sm text-gray-500">
+            API-URL: {buildApiUrl('/prediction-quality')}
+          </p>
+        </div>
       </div>
     )
   }

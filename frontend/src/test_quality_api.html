@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quality API Test</title>
+</head>
+<body>
+    <h1>Quality API Test</h1>
+    <button id="testBtn">Test Quality API</button>
+    <div id="result"></div>
+    <div id="logs"></div>
+
+    <script>
+        function log(message) {
+            const logs = document.getElementById('logs');
+            logs.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+
+        function getApiBase() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:8000';
+            }
+            return '/api';
+        }
+
+        function buildApiUrl(endpoint) {
+            const base = getApiBase();
+            if (base.startsWith('http')) {
+                return base + '/api' + endpoint;
+            }
+            return base + endpoint;
+        }
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            log('Starting API test...');
+            const url = buildApiUrl('/prediction-quality');
+            log('API URL: ' + url);
+            
+            try {
+                log('Sending request...');
+                const response = await fetch(url);
+                log('Response status: ' + response.status);
+                log('Response statusText: ' + response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error('Response not ok: ' + response.status);
+                }
+                
+                log('Parsing JSON...');
+                const data = await response.json();
+                log('Data received successfully');
+                log('Entries count: ' + (data.entries ? data.entries.length : 'undefined'));
+                log('Stats: ' + (data.stats ? JSON.stringify(data.stats) : 'undefined'));
+                
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                
+            } catch (error) {
+                log('Error: ' + error.message);
+                document.getElementById('result').innerHTML = '<div style="color: red;">Error: ' + error.message + '</div>';
+            }
+        });
+    </script>
+</body>
+</html>
