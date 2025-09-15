@@ -2,9 +2,34 @@
 
 ## Problem: Frontend lädt unendlich trotz erfolgreichem Deployment
 
+### Hauptursache: Backend-Database-Probleme
+
+Das häufigste Problem ist, dass die SQLite-Datenbank auf Render nicht erstellt werden kann.
+
+#### Sofort-Diagnose:
+```bash
+# 1. Backend Health Check
+curl https://kick-predictor-backend.onrender.com/health
+# Erwartete Antwort: {"status":"online"}
+
+# 2. Database Debug Check  
+curl https://kick-predictor-backend.onrender.com/api/db/debug
+# Zeigt detaillierte Database-Konfiguration
+
+# 3. Database Status
+curl https://kick-predictor-backend.onrender.com/api/db/stats
+# Zeigt Anzahl von Teams, Matches, Predictions
+```
+
 ### Mögliche Ursachen und Lösungen:
 
-#### 1. **Backend nicht erreichbar (häufigste Ursache)**
+#### 1. **Database-Disk nicht gemountet (häufigste Ursache)**
+- **Problem**: Render Free Tier Disk Mount dauert Zeit oder schlägt fehl
+- **Lösung**: System verwendet automatisch Fallback-Pfade (/tmp, /app)
+- **Test**: `/api/db/debug` zeigt verfügbare Pfade und deren Status
+- **Wartezeit**: 2-3 Minuten nach Deployment für Disk-Mount
+
+#### 2. **Backend schläft (Free Tier)**
 - **Problem**: Free Tier Backend schläft nach 15min Inaktivität ein
 - **Lösung**: Erste API-Anfrage kann 30-60 Sekunden dauern
 - **Test**: https://kick-predictor-backend.onrender.com/health aufrufen
@@ -52,11 +77,29 @@
 
 ### Fix-Reihenfolge:
 
-1. **Warte 2-3 Minuten** nach Deployment (Backend Startup)
-2. **Teste Backend direkt** (Health Endpoint)
-3. **Synchronisiere Datenbank** (falls leer)
-4. **Prüfe CORS-Konfiguration**
-5. **Teste Frontend über Debug-Seite**
+1. **Warte 2-3 Minuten** nach Deployment (Backend + DB Startup)
+2. **Teste Database Debug** `/api/db/debug` für detaillierte Infos
+3. **Synchronisiere Datenbank** `POST /api/db/full-sync` (falls leer)  
+4. **Teste Backend direkt** (Health Endpoint)
+5. **Prüfe CORS-Konfiguration**
+6. **Teste Frontend über Debug-Seite**
+
+### Neue Debug-Tools:
+
+#### Database Debug Endpoint:
+```bash
+curl https://kick-predictor-backend.onrender.com/api/db/debug
+```
+Zeigt:
+- Database-Pfad-Konfiguration
+- Fallback-Pfad-Tests  
+- Verzeichnis-Berechtigungen
+- Connection-Status
+
+#### Frontend Debug-Seite:
+- Besuche: `https://kick-predictor-frontend.onrender.com/api-debug`
+- Teste API-Endpoints interaktiv
+- Zeigt CORS und Connectivity-Probleme
 
 ### Render-spezifische Einstellungen:
 
