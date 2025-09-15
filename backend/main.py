@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 # Lade Umgebungsvariablen
 load_dotenv()
 
-# Initialisiere Datenbank früh im Startup-Prozess mit Retry-Logik
+# Initialisiere Enhanced Database früh im Startup-Prozess mit Retry-Logik
 try:
-    from app.database.config import init_database
-    init_database()
-    logger.info("Database initialization successful")
+    from app.database.config_enhanced import init_enhanced_database
+    init_enhanced_database()
+    logger.info("Enhanced database initialization successful")
     
-    # Auto-Sync beim Start wenn aktiviert (für Render temporäre DB)
+    # Auto-Sync beim Start wenn aktiviert (funktioniert mit PostgreSQL und SQLite)
     if os.getenv("AUTO_SYNC_ON_START") == "true":
         logger.info("Auto-sync on start enabled, triggering background sync...")
         try:

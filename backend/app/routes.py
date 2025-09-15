@@ -26,49 +26,57 @@ async def database_debug():
     Debug-Endpoint für Datenbank-Probleme
     """
     import os
-    from app.database.config import db_config
+    from app.database.config_enhanced import enhanced_db_config
     
     debug_info = {
         "environment": os.getenv("ENVIRONMENT", "not set"),
         "database_url_env": os.getenv("DATABASE_URL", "not set"),
-        "current_db_path": db_config.db_path,
-        "current_db_url": db_config.database_url,
-        "path_exists": os.path.exists(db_config.db_path),
+        "current_db_path": enhanced_db_config.db_path,
+        "current_db_url": enhanced_db_config.database_url,
+        "db_type": enhanced_db_config.db_type,
+        "path_exists": os.path.exists(enhanced_db_config.db_path) if enhanced_db_config.db_path else "N/A (PostgreSQL)",
         "path_writable": False,
-        "directory_exists": os.path.exists(os.path.dirname(db_config.db_path)),
+        "directory_exists": os.path.exists(os.path.dirname(enhanced_db_config.db_path)) if enhanced_db_config.db_path else "N/A (PostgreSQL)",
         "directory_writable": False,
         "connection_test": False
     }
     
-    # Test path writability
-    try:
-        test_file = db_config.db_path + '.test'
-        with open(test_file, 'w') as f:
-            f.write('test')
-        os.remove(test_file)
-        debug_info["path_writable"] = True
-    except:
-        pass
-    
-    # Test directory writability
-    try:
-        db_dir = os.path.dirname(db_config.db_path)
-        test_file = os.path.join(db_dir, 'test.tmp')
-        with open(test_file, 'w') as f:
-            f.write('test')
-        os.remove(test_file)
-        debug_info["directory_writable"] = True
-    except:
-        pass
+    # Test path writability (only for SQLite)
+    if enhanced_db_config.db_type == 'sqlite' and enhanced_db_config.db_path:
+        try:
+            test_file = enhanced_db_config.db_path + '.test'
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+            debug_info["path_writable"] = True
+        except:
+            pass
+        
+        # Test directory writability
+        try:
+            db_dir = os.path.dirname(enhanced_db_config.db_path)
+            test_file = os.path.join(db_dir, 'test.tmp')
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+            debug_info["directory_writable"] = True
+        except:
+            pass
+    else:
+        # PostgreSQL doesn't need file path tests
+        debug_info["path_writable"] = "N/A (PostgreSQL)"
+        debug_info["directory_writable"] = "N/A (PostgreSQL)"
     
     # Test connection
-    debug_info["connection_test"] = db_config.test_database_connection()
+    connection_ok, connection_msg = enhanced_db_config.test_database_connection()
+    debug_info["connection_test"] = connection_ok
+    debug_info["connection_message"] = connection_msg
     
-    # Add fallback paths if available
-    if hasattr(db_config, 'fallback_paths'):
-        debug_info["fallback_paths"] = db_config.fallback_paths
+    # Add fallback paths if available (SQLite only)
+    if enhanced_db_config.db_type == 'sqlite' and hasattr(enhanced_db_config, 'fallback_paths'):
+        debug_info["fallback_paths"] = enhanced_db_config.fallback_paths
         debug_info["fallback_tests"] = []
-        for path in db_config.fallback_paths:
+        for path in enhanced_db_config.fallback_paths:
             try:
                 test_file = path + '.test'
                 with open(test_file, 'w') as f:

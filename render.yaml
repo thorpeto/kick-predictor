@@ -17,7 +17,7 @@ services:
       - key: PORT
         value: 10000
       - key: DATABASE_URL
-        value: sqlite:////tmp/kick_predictor.db
+        value: postgresql://postgres:XLJ8PS59rThpOEBC@db.zfgyjuijxpgnhpereoyn.supabase.co:5432/postgres
       - key: ENABLE_BACKGROUND_SYNC
         value: "true"
       - key: SYNC_INTERVAL_HOURS
