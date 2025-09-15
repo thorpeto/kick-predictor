@@ -2,14 +2,17 @@ services:
   # Backend Service
   - type: web
     name: kick-predictor-backend
-    env: python
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: python main.py
+    env: docker
+    dockerfilePath: ./backend/Dockerfile.render
     repo: https://github.com/thorpeto/kick-predictor.git
     branch: main
     rootDir: backend
     region: frankfurt  # Ändern Sie dies nach Bedarf
     healthCheckPath: /health
+    disk:
+      name: kick-predictor-data
+      mountPath: /app/data
+      sizeGB: 1
     envVars:
       - key: ENVIRONMENT
         value: production
@@ -17,15 +20,20 @@ services:
         value: "https://kick-predictor-frontend.onrender.com,https://*.onrender.com"
       - key: PORT
         value: 10000
+      - key: DATABASE_URL
+        value: sqlite:////app/data/kick_predictor.db
+      - key: ENABLE_BACKGROUND_SYNC
+        value: "true"
+      - key: SYNC_INTERVAL_HOURS
+        value: "6"
     autoDeploy: true
     plan: free  # Ändern Sie dies nach Bedarf (free, starter, etc.)
 
   # Frontend Service
   - type: web
     name: kick-predictor-frontend
-    env: node
-    buildCommand: npm install && npm run build
-    startCommand: npx serve -s dist -l $PORT
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile
     repo: https://github.com/thorpeto/kick-predictor.git
     branch: main
     rootDir: frontend

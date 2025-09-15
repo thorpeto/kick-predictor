@@ -16,15 +16,10 @@ FROM nginx:alpine
 
 # Kopiere die gebauten Dateien und die nginx-Konfiguration
 COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/templates/default.conf.template
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Healthcheck konfigurieren
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-80}/health || exit 1
+# Expose port
+EXPOSE 3000
 
-# Umgebungsvariablen
-ENV PORT=8080
-ENV BACKEND_URL=http://backend:8000
-
-# Starte nginx mit Umgebungsvariablen
-CMD /bin/sh -c "envsubst '\$PORT \$BACKEND_URL' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+# Starte nginx
+CMD ["nginx", "-g", "daemon off;"]

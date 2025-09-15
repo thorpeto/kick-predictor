@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Dict, List
 from app.models.schemas import Match, MatchResult, Prediction, FormFactor
-from app.services.data_service import DataService
+from app.interfaces.data_interface import DataServiceInterface
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ class PredictionService:
     Service zur Vorhersage von Spielergebnissen
     """
     
-    def __init__(self, data_service: DataService):
+    def __init__(self, data_service: DataServiceInterface):
         self.data_service = data_service
         # Hier später das trainierte Modell laden
     

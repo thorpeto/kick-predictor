@@ -5,13 +5,14 @@ from typing import List, Dict, Optional
 from app.models.schemas import Match, MatchResult, Prediction, FormFactor, Team, TableEntry, MatchdayInfo, PredictionQualityEntry, PredictionQualityStats, HitType
 from app.services.openliga_client import OpenLigaDBClient
 from app.services.data_converter import DataConverter
+from app.interfaces.data_interface import DataServiceInterface
 import logging
 import json
 import hashlib
 
 logger = logging.getLogger(__name__)
 
-class DataService:
+class DataService(DataServiceInterface):
     """
     Service zum Laden und Verarbeiten der Bundesliga-Daten
     """
