@@ -53,7 +53,7 @@ except Exception as e:
     # In Produktion versuche es nochmal nach kurzer Wartezeit (für Render Disk Mount)
     if os.getenv("ENVIRONMENT") == "production":
         import time
-        from app.database.config import init_database as retry_init_database
+        from app.database.config_enhanced import init_enhanced_database as retry_init_database
         logger.info("Retrying database initialization in 5 seconds...")
         time.sleep(5)
         try:

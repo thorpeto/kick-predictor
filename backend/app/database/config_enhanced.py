@@ -87,9 +87,7 @@ class EnhancedDatabaseConfig:
                 max_overflow=10,
                 pool_pre_ping=True,  # Validate connections before use
                 pool_recycle=300,    # Recycle connections every 5 minutes
-                connect_args={
-                    "sslmode": "require",  # Supabase requires SSL
-                }
+                # Removed connect_args with sslmode - let Supabase handle SSL automatically
             )
         elif self.db_type == 'sqlite':
             # SQLite configuration
