@@ -41,6 +41,12 @@ class TableEntry(BaseModel):
     goal_difference: int
     points: int
 
+class MatchdayInfo(BaseModel):
+    current_matchday: int
+    next_matchday: int
+    predictions_available_until: int
+    season: str
+
 class Prediction(BaseModel):
     match: Match
     home_win_prob: float

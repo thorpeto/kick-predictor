@@ -45,6 +45,13 @@ interface TableEntry {
   points: number;
 }
 
+interface MatchdayInfo {
+  current_matchday: number;
+  next_matchday: number;
+  predictions_available_until: number;
+  season: string;
+}
+
 interface Prediction {
   match: Match;
   home_win_prob: number;
@@ -103,6 +110,35 @@ export const fetchNextMatchday = async (): Promise<Match[]> => {
   }
 }
 
+export const fetchUpcomingMatches = async (): Promise<{ matches: Match[], matchday: number }> => {
+  try {
+    // Erst die Matchday-Info holen
+    const matchdayInfo = await fetchMatchdayInfo();
+    const upcomingMatchday = matchdayInfo.current_matchday;
+    
+    // Dann die Spiele für den kommenden Spieltag holen
+    const url = buildApiUrl(`/predictions/${upcomingMatchday}`);
+    console.log('Fetching upcoming matches from:', url);
+    const response = await axios.get(url);
+    
+    // Extrahiere nur die Match-Daten aus den Predictions
+    const matches = response.data.map((prediction: any) => prediction.match);
+    
+    return { matches, matchday: upcomingMatchday };
+  } catch (error) {
+    console.error('Fehler beim Abrufen der kommenden Spiele:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Axios error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url
+      });
+    }
+    throw error;
+  }
+}
+
 export const fetchPredictions = async (matchday: number): Promise<Prediction[]> => {
   try {
     const url = buildApiUrl(`/predictions/${matchday}`);
@@ -155,6 +191,27 @@ export const fetchCurrentTable = async (): Promise<TableEntry[]> => {
     return response.data
   } catch (error) {
     console.error('Fehler beim Abrufen der Tabelle:', error)
+    if (axios.isAxiosError(error)) {
+      console.error('Axios error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url
+      });
+    }
+    throw error
+  }
+}
+
+export const fetchMatchdayInfo = async (): Promise<MatchdayInfo> => {
+  try {
+    const url = buildApiUrl('/matchday-info');
+    console.log('Fetching matchday info from:', url);
+    const response = await axios.get(url)
+    console.log('Matchday info response:', response.data);
+    return response.data
+  } catch (error) {
+    console.error('Fehler beim Abrufen der Spieltag-Informationen:', error)
     if (axios.isAxiosError(error)) {
       console.error('Axios error details:', {
         message: error.message,
@@ -265,6 +322,56 @@ export const useCurrentTable = () => {
     }
 
     getCurrentTable()
+  }, [])
+
+  return { data, loading, error }
+}
+
+export const useMatchdayInfo = () => {
+  const [data, setData] = useState<MatchdayInfo | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const getMatchdayInfo = async () => {
+      try {
+        setLoading(true)
+        const info = await fetchMatchdayInfo()
+        setData(info)
+        setError(null)
+      } catch (err) {
+        setError('Fehler beim Laden der Spieltag-Informationen.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    getMatchdayInfo()
+  }, [])
+
+  return { data, loading, error }
+}
+
+export const useUpcomingMatches = () => {
+  const [data, setData] = useState<{ matches: Match[], matchday: number } | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const getUpcomingMatches = async () => {
+      try {
+        setLoading(true)
+        const result = await fetchUpcomingMatches()
+        setData(result)
+        setError(null)
+      } catch (err) {
+        setError('Fehler beim Laden der kommenden Spiele.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    getUpcomingMatches()
   }, [])
 
   return { data, loading, error }

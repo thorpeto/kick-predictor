@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
-from app.models.schemas import Match, Prediction, MatchResult, TableEntry
+from fastapi import APIRouter, HTTPException, Query
+from typing import List, Optional
+from app.models.schemas import Match, Prediction, MatchResult, TableEntry, MatchdayInfo
 from app import data_service, prediction_service
 
 router = APIRouter(tags=["Bundesliga"])
@@ -73,3 +73,28 @@ async def get_current_table():
         return table
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler beim Abrufen der Tabelle: {str(e)}")
+
+@router.get("/matchday-info", response_model=MatchdayInfo)
+async def get_matchday_info():
+    """
+    Liefert Informationen über den aktuellen Spieltag und Vorhersagen-Verfügbarkeit
+    """
+    try:
+        info = await data_service.get_current_matchday_info()
+        return info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Abrufen der Spieltag-Informationen: {str(e)}")
+
+@router.delete("/predictions/cache")
+async def clear_predictions_cache(matchday: Optional[int] = Query(None, description="Spieltag für spezifische Cache-Löschung")):
+    """
+    Löscht den Vorhersagen-Cache (optional für einen bestimmten Spieltag)
+    """
+    try:
+        data_service.clear_predictions_cache(matchday)
+        if matchday:
+            return {"status": "success", "message": f"Cache für Spieltag {matchday} gelöscht"}
+        else:
+            return {"status": "success", "message": "Gesamter Vorhersagen-Cache gelöscht"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Löschen des Caches: {str(e)}")

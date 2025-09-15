@@ -3,7 +3,7 @@ services:
   - type: web
     name: kick-predictor-backend
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python main.py
     repo: https://github.com/thorpeto/kick-predictor.git
     branch: main
@@ -14,7 +14,7 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: ALLOWED_ORIGINS
-        value: "*"
+        value: "https://kick-predictor-frontend.onrender.com,https://*.onrender.com"
       - key: PORT
         value: 10000
     autoDeploy: true

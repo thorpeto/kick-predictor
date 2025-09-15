@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNextMatchday } from '../services/api'
+import { useUpcomingMatches } from '../services/api'
 
 // Typdefinitionen werden aus der API importiert
 interface Team {
@@ -22,8 +22,8 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Verwenden des benutzerdefinierten Hooks für den nächsten Spieltag
-  const { data: matches, loading: matchesLoading, error: matchesError } = useNextMatchday()
+  // Verwenden des benutzerdefinierten Hooks für kommende Spiele
+  const { data: upcomingData, loading: matchesLoading, error: matchesError } = useUpcomingMatches()
 
   // Aktualisiere den Ladezustand wenn der Hook fertig ist
   useEffect(() => {
@@ -60,14 +60,16 @@ const HomePage = () => {
       </section>
 
       <section className="mb-12">
-        <h2 className="text-center mb-6">Der nächste Spieltag</h2>
+        <h2 className="text-center mb-6">
+          {upcomingData ? `Spieltag ${upcomingData.matchday}` : 'Kommender Spieltag'}
+        </h2>
         {loading ? (
           <p className="text-center">Lade Spieltag-Daten...</p>
         ) : error ? (
           <p className="text-center text-red-600">{error}</p>
-        ) : matches && matches.length > 0 ? (
+        ) : upcomingData && upcomingData.matches && upcomingData.matches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {matches.map((match: Match) => (
+            {upcomingData.matches.map((match: Match) => (
               <div key={match.id} className="card">
                 <div className="flex justify-between items-center">
                   <div className="font-bold">{match.home_team.name}</div>
@@ -93,7 +95,7 @@ const HomePage = () => {
       </section>
 
       <section className="text-center">
-        <h2 className="mb-4">Mach dich bereit für den nächsten Spieltag</h2>
+        <h2 className="mb-4">Mach dich bereit für den kommenden Spieltag</h2>
         <p className="mb-6">
           Wirf einen Blick auf unsere aktuellen Vorhersagen und entdecke, welche Teams die besten Gewinnchancen haben.
         </p>

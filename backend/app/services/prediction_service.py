@@ -2,6 +2,9 @@ import numpy as np
 from typing import Dict, List
 from app.models.schemas import Match, MatchResult, Prediction, FormFactor
 from app.services.data_service import DataService
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PredictionService:
     """
@@ -98,21 +101,28 @@ class PredictionService:
     
     async def predict_matchday(self, matchday: int) -> List[Prediction]:
         """
-        Erstellt Vorhersagen für alle Spiele eines Spieltags
+        Erstellt Vorhersagen für alle Spiele eines Spieltags mit Caching
         """
-        # Versuche, die Spiele des angegebenen Spieltags zu laden
-        # In diesem Beispiel verwenden wir die Spiele des nächsten Spieltags,
-        # da die API noch keinen Endpunkt für einen spezifischen Spieltag hat
+        # Prüfe zunächst den Cache
+        cached_predictions = self.data_service._get_cached_predictions(matchday)
+        if cached_predictions:
+            return cached_predictions
         
-        matches = await self.data_service.get_next_matchday()
+        # Lade die Spiele des spezifischen Spieltags
+        matches = await self.data_service.get_matches_by_matchday(matchday)
         
-        # Filtere die Spiele nach dem angegebenen Spieltag
-        # Wenn der angegebene Spieltag nicht mit dem nächsten Spieltag übereinstimmt,
-        # werden die verfügbaren Spiele trotzdem verwendet
+        if not matches:
+            logger.warning(f"Keine Spiele für Spieltag {matchday} gefunden")
+            return []
         
         predictions = []
         for match in matches:
             prediction = await self.predict_match(match)
             predictions.append(prediction)
+        
+        logger.info(f"Vorhersagen für {len(predictions)} Spiele in Spieltag {matchday} erstellt")
+        
+        # Speichere die Vorhersagen im Cache
+        self.data_service._cache_predictions(matchday, predictions)
         
         return predictions

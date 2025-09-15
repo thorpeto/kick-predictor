@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Pie } from 'react-chartjs-2'
-import { usePredictions } from '../services/api'
+import { usePredictions, useMatchdayInfo } from '../services/api'
 
 // Chart.js registrieren
 ChartJS.register(ArcElement, Tooltip, Legend)
@@ -41,11 +41,48 @@ interface Prediction {
 }
 
 const PredictionsPage = () => {
-  // Aktueller Spieltag ist 3
-  const [matchday, setMatchday] = useState(3) 
+  const { data: matchdayInfo, loading: matchdayLoading, error: matchdayError } = useMatchdayInfo()
+  
+  // Initialer Spieltag: verwende aktuellen Spieltag oder 3 als Fallback
+  const [matchday, setMatchday] = useState(3)
+  
+  // Aktualisiere den Default-Spieltag wenn matchdayInfo geladen wurde
+  useEffect(() => {
+    if (matchdayInfo && !matchdayLoading) {
+      setMatchday(matchdayInfo.current_matchday)
+    }
+  }, [matchdayInfo, matchdayLoading])
   
   // Verwenden des benutzerdefinierten Hooks für die Vorhersagen
   const { data: predictions, loading, error } = usePredictions(matchday)
+
+  // Generiere Optionen für das Dropdown
+  const generateMatchdayOptions = () => {
+    if (!matchdayInfo) return []
+    
+    const options = []
+    const maxMatchday = 34 // Bundesliga hat 34 Spieltage
+    
+    for (let i = 1; i <= maxMatchday; i++) {
+      const isAvailable = i <= matchdayInfo.predictions_available_until
+      
+      let label = `Spieltag ${i}`
+      if (!isAvailable) label += ' - nicht verfügbar'
+      
+      options.push({
+        value: i,
+        label,
+        disabled: !isAvailable
+      })
+    }
+    
+    return options
+  }
+
+  const handleMatchdayChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedMatchday = parseInt(event.target.value)
+    setMatchday(selectedMatchday)
+  }
 
   const getPieChartData = (prediction: Prediction) => {
     return {
@@ -75,7 +112,47 @@ const PredictionsPage = () => {
 
   return (
     <div>
-      <h1 className="text-center mb-8">Vorhersagen für Spieltag {matchday}</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Bundesliga Vorhersagen</h1>
+        
+        {matchdayLoading ? (
+          <div className="text-sm text-gray-500">Lade Spieltag-Info...</div>
+        ) : matchdayError ? (
+          <div className="text-sm text-red-500">Fehler beim Laden der Spieltag-Info</div>
+        ) : (
+          <div className="flex items-center gap-4">
+            <label htmlFor="matchday-select" className="text-sm font-medium">
+              Spieltag auswählen:
+            </label>
+            <select
+              id="matchday-select"
+              value={matchday}
+              onChange={handleMatchdayChange}
+              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {generateMatchdayOptions().map((option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                  disabled={option.disabled}
+                  className={option.disabled ? 'text-gray-400' : ''}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      <h2 className="text-center mb-6 text-lg text-gray-600">
+        Vorhersagen für Spieltag {matchday}
+        {matchdayInfo && matchday > matchdayInfo.predictions_available_until && (
+          <span className="block text-sm text-red-500 mt-1">
+            Vorhersagen noch nicht verfügbar
+          </span>
+        )}
+      </h2>
 
       {loading ? (
         <div className="text-center">
@@ -84,6 +161,16 @@ const PredictionsPage = () => {
       ) : error ? (
         <div className="text-center text-red-600">
           <p>{error}</p>
+        </div>
+      ) : matchdayInfo && matchday > matchdayInfo.predictions_available_until ? (
+        <div className="text-center text-gray-600">
+          <div className="bg-gray-100 rounded-lg p-8">
+            <h3 className="text-xl font-semibold mb-2">Vorhersagen noch nicht verfügbar</h3>
+            <p>Vorhersagen sind nur bis Spieltag {matchdayInfo.predictions_available_until} verfügbar.</p>
+            <p className="text-sm mt-2">
+              Saison: {matchdayInfo.season}
+            </p>
+          </div>
         </div>
       ) : predictions && predictions.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

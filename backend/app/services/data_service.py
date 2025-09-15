@@ -2,10 +2,12 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
-from app.models.schemas import Match, MatchResult, Prediction, FormFactor, Team, TableEntry
+from app.models.schemas import Match, MatchResult, Prediction, FormFactor, Team, TableEntry, MatchdayInfo
 from app.services.openliga_client import OpenLigaDBClient
 from app.services.data_converter import DataConverter
 import logging
+import json
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,9 @@ class DataService:
         # Initialisierung des OpenLigaDB-Clients
         self.league = "bl1"  # 1. Bundesliga
         self.season = "2025"  # Saison 2025/2026
+        # Cache für Vorhersagen (in-memory)
+        self._predictions_cache: Dict[str, Dict] = {}
+        self._cache_expiry: Dict[str, datetime] = {}
     
     async def get_team_matches(self, team_id: int) -> List[MatchResult]:
         """
@@ -38,6 +43,28 @@ class DataService:
                 return results
         except Exception as e:
             logger.error(f"Fehler beim Abrufen der Spiele für Team {team_id}: {str(e)}")
+            return []
+    
+    async def get_matches_by_matchday(self, matchday: int) -> List[Match]:
+        """
+        Holt alle Spiele eines bestimmten Spieltags
+        """
+        try:
+            async with OpenLigaDBClient() as client:
+                # Hole Spiele für den spezifischen Spieltag
+                matches_data = await client.get_matches_by_matchday(self.league, self.season, matchday)
+                
+                # Konvertiere die Daten in unser Modell
+                matches = []
+                for match_data in matches_data:
+                    match = DataConverter.convert_match(match_data)
+                    if match:
+                        matches.append(match)
+                
+                logger.info(f"Gefunden {len(matches)} Spiele für Spieltag {matchday}")
+                return matches
+        except Exception as e:
+            logger.error(f"Fehler beim Abrufen der Spiele für Spieltag {matchday}: {str(e)}")
             return []
     
     async def get_last_n_matches(self, team_id: int, n: int = 14) -> List[MatchResult]:
@@ -265,3 +292,158 @@ class DataService:
         except Exception as e:
             logger.error(f"Fehler beim Berechnen der Tabelle: {str(e)}")
             return []
+
+    async def get_current_matchday_info(self) -> MatchdayInfo:
+        """
+        Bestimmt den aktuellen Spieltag und bis zu welchem Spieltag Vorhersagen verfügbar sind
+        """
+        try:
+            async with OpenLigaDBClient() as client:
+                # Hole alle Spiele der aktuellen Saison
+                all_matches = await client.get_matches_by_league_season(self.league, self.season)
+                
+                # Sortiere Spiele nach Spieltag und Datum
+                sorted_matches = sorted(all_matches, key=lambda x: (x.get('matchday', 1), x.get('matchDateTime', '')))
+                
+                now = datetime.now()
+                completed_matchdays = set()
+                current_matchday = 4  # Spieltag 4 ist der aktuelle (da 1-3 bereits gespielt)
+                
+                # Analysiere alle Spiele um abgeschlossene Spieltage zu finden
+                matchday_status = {}
+                for match_data in sorted_matches:
+                    try:
+                        match_date_str = match_data.get('matchDateTime', '')
+                        if match_date_str:
+                            match_date = datetime.fromisoformat(match_date_str.replace('Z', '+00:00'))
+                        else:
+                            continue
+                            
+                        matchday = match_data.get('matchday', 1)
+                        is_finished = match_data.get('matchIsFinished', False)
+                        
+                        if matchday not in matchday_status:
+                            matchday_status[matchday] = {'total': 0, 'finished': 0, 'latest_date': match_date}
+                        
+                        matchday_status[matchday]['total'] += 1
+                        if is_finished:
+                            matchday_status[matchday]['finished'] += 1
+                        
+                        # Aktualisiere das späteste Datum für diesen Spieltag
+                        if match_date > matchday_status[matchday]['latest_date']:
+                            matchday_status[matchday]['latest_date'] = match_date
+                            
+                    except Exception as e:
+                        logger.warning(f"Fehler beim Parsen des Spiels: {e}")
+                        continue
+                
+                # Bestimme den aktuellen Spieltag basierend auf vollständig abgeschlossenen Spieltagen
+                for matchday in sorted(matchday_status.keys()):
+                    status = matchday_status[matchday]
+                    # Ein Spieltag gilt als abgeschlossen, wenn alle Spiele beendet sind
+                    # oder wenn das späteste Spiel des Spieltags in der Vergangenheit liegt
+                    is_complete = (status['finished'] == status['total']) or (status['latest_date'] < now - timedelta(days=1))
+                    
+                    if is_complete:
+                        completed_matchdays.add(matchday)
+                        current_matchday = max(current_matchday, matchday + 1)
+                
+                logger.info(f"Abgeschlossene Spieltage: {sorted(completed_matchdays)}")
+                logger.info(f"Bestimmter aktueller Spieltag: {current_matchday}")
+                
+                # Nächster Spieltag
+                next_matchday = min(current_matchday + 1, 34)
+                
+                # Vorhersagen sind bis zum übernächsten Spieltag verfügbar
+                predictions_available_until = min(current_matchday + 2, 34)
+                
+                logger.info(f"Spieltag-Info: Aktuell={current_matchday}, Nächster={next_matchday}, Vorhersagen bis={predictions_available_until}")
+                
+                return MatchdayInfo(
+                    current_matchday=current_matchday,
+                    next_matchday=next_matchday,
+                    predictions_available_until=predictions_available_until,
+                    season=f"{self.season}/{int(self.season)+1}"
+                )
+                
+        except Exception as e:
+            logger.error(f"Fehler beim Bestimmen der Spieltag-Info: {str(e)}")
+            # Fallback-Werte
+            return MatchdayInfo(
+                current_matchday=3,
+                next_matchday=4,
+                predictions_available_until=5,
+                season=f"{self.season}/{int(self.season)+1}"
+            )
+
+    def _generate_cache_key(self, matchday: int) -> str:
+        """
+        Generiert einen Cache-Schlüssel für Vorhersagen eines Spieltags
+        """
+        return f"predictions_{self.league}_{self.season}_{matchday}"
+    
+    def _is_cache_valid(self, cache_key: str) -> bool:
+        """
+        Prüft, ob der Cache-Eintrag noch gültig ist (1 Stunde Gültigkeit)
+        """
+        if cache_key not in self._cache_expiry:
+            return False
+        
+        return datetime.now() < self._cache_expiry[cache_key]
+    
+    def _get_cached_predictions(self, matchday: int) -> Optional[List[Prediction]]:
+        """
+        Holt Vorhersagen aus dem Cache
+        """
+        cache_key = self._generate_cache_key(matchday)
+        
+        if cache_key in self._predictions_cache and self._is_cache_valid(cache_key):
+            logger.info(f"Cache-Hit für Spieltag {matchday}")
+            cached_data = self._predictions_cache[cache_key]
+            
+            # Konvertiere zurück zu Prediction-Objekten
+            predictions = []
+            for pred_data in cached_data['predictions']:
+                prediction = Prediction(**pred_data)
+                predictions.append(prediction)
+            
+            return predictions
+        
+        return None
+    
+    def _cache_predictions(self, matchday: int, predictions: List[Prediction]) -> None:
+        """
+        Speichert Vorhersagen im Cache
+        """
+        cache_key = self._generate_cache_key(matchday)
+        
+        # Konvertiere Prediction-Objekte zu JSON-serialisierbaren Dicts
+        serializable_predictions = []
+        for prediction in predictions:
+            pred_dict = prediction.dict()
+            serializable_predictions.append(pred_dict)
+        
+        self._predictions_cache[cache_key] = {
+            'predictions': serializable_predictions,
+            'cached_at': datetime.now().isoformat()
+        }
+        
+        # Cache für 1 Stunde gültig
+        self._cache_expiry[cache_key] = datetime.now() + timedelta(hours=1)
+        
+        logger.info(f"Vorhersagen für Spieltag {matchday} im Cache gespeichert")
+    
+    def clear_predictions_cache(self, matchday: Optional[int] = None) -> None:
+        """
+        Löscht den Vorhersagen-Cache (optional nur für einen bestimmten Spieltag)
+        """
+        if matchday:
+            cache_key = self._generate_cache_key(matchday)
+            if cache_key in self._predictions_cache:
+                del self._predictions_cache[cache_key]
+                del self._cache_expiry[cache_key]
+                logger.info(f"Cache für Spieltag {matchday} gelöscht")
+        else:
+            self._predictions_cache.clear()
+            self._cache_expiry.clear()
+            logger.info("Gesamter Vorhersagen-Cache gelöscht")
