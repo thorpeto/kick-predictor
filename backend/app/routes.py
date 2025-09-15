@@ -20,6 +20,66 @@ async def test_connection():
         "service": "Kick Predictor Backend"
     }
 
+@router.get("/db/debug")
+async def database_debug():
+    """
+    Debug-Endpoint für Datenbank-Probleme
+    """
+    import os
+    from app.database.config import db_config
+    
+    debug_info = {
+        "environment": os.getenv("ENVIRONMENT", "not set"),
+        "database_url_env": os.getenv("DATABASE_URL", "not set"),
+        "current_db_path": db_config.db_path,
+        "current_db_url": db_config.database_url,
+        "path_exists": os.path.exists(db_config.db_path),
+        "path_writable": False,
+        "directory_exists": os.path.exists(os.path.dirname(db_config.db_path)),
+        "directory_writable": False,
+        "connection_test": False
+    }
+    
+    # Test path writability
+    try:
+        test_file = db_config.db_path + '.test'
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+        debug_info["path_writable"] = True
+    except:
+        pass
+    
+    # Test directory writability
+    try:
+        db_dir = os.path.dirname(db_config.db_path)
+        test_file = os.path.join(db_dir, 'test.tmp')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+        debug_info["directory_writable"] = True
+    except:
+        pass
+    
+    # Test connection
+    debug_info["connection_test"] = db_config.test_database_connection()
+    
+    # Add fallback paths if available
+    if hasattr(db_config, 'fallback_paths'):
+        debug_info["fallback_paths"] = db_config.fallback_paths
+        debug_info["fallback_tests"] = []
+        for path in db_config.fallback_paths:
+            try:
+                test_file = path + '.test'
+                with open(test_file, 'w') as f:
+                    f.write('test')
+                os.remove(test_file)
+                debug_info["fallback_tests"].append({"path": path, "writable": True})
+            except Exception as e:
+                debug_info["fallback_tests"].append({"path": path, "writable": False, "error": str(e)})
+    
+    return debug_info
+
 @router.get("/next-matchday", response_model=List[Match])
 async def get_next_matchday():
     """
