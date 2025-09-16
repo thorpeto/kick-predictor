@@ -68,18 +68,18 @@ async def get_teams():
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT team_id, team_name, team_icon_url, shortname
+            SELECT team_id, name, icon_url, short_name
             FROM teams_real 
-            ORDER BY team_name
+            ORDER BY name
         """)
         
         teams = []
         for row in cursor.fetchall():
             teams.append({
                 "team_id": row["team_id"],
-                "team_name": row["team_name"],
-                "team_icon_url": row["team_icon_url"],
-                "shortname": row["shortname"]
+                "team_name": row["name"],
+                "team_icon_url": row["icon_url"],
+                "shortname": row["short_name"]
             })
         
         conn.close()
@@ -102,9 +102,9 @@ async def get_table():
         # Tabelle berechnen
         cursor.execute("""
             SELECT 
-                t.team_name,
-                t.team_icon_url,
-                t.shortname,
+                t.name,
+                t.icon_url,
+                t.short_name,
                 COUNT(CASE WHEN (m.team1_id = t.team_id AND m.points_team1 > m.points_team2) 
                             OR (m.team2_id = t.team_id AND m.points_team2 > m.points_team1) THEN 1 END) as wins,
                 COUNT(CASE WHEN m.points_team1 = m.points_team2 AND (m.team1_id = t.team_id OR m.team2_id = t.team_id) THEN 1 END) as draws,
@@ -120,7 +120,7 @@ async def get_table():
             FROM teams_real t
             LEFT JOIN matches_real m ON (t.team_id = m.team1_id OR t.team_id = m.team2_id) 
                 AND m.season = ? AND m.is_finished = 1
-            GROUP BY t.team_id, t.team_name, t.team_icon_url, t.shortname
+            GROUP BY t.team_id, t.name, t.icon_url, t.short_name
             ORDER BY points DESC, (goals_for - goals_against) DESC, goals_for DESC
         """, (current_season,))
         
@@ -129,9 +129,9 @@ async def get_table():
         for row in cursor.fetchall():
             table.append({
                 "position": position,
-                "team_name": row["team_name"],
-                "team_icon_url": row["team_icon_url"],
-                "shortname": row["shortname"],
+                "team_name": row["name"],
+                "team_icon_url": row["icon_url"],
+                "shortname": row["short_name"],
                 "games": row["wins"] + row["draws"] + row["losses"],
                 "wins": row["wins"],
                 "draws": row["draws"], 
