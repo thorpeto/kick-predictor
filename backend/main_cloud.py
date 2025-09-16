@@ -149,6 +149,164 @@ async def get_table():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler beim Laden der Tabelle: {str(e)}")
 
+@app.get("/api/matchday-info")
+async def get_matchday_info():
+    """Informationen zum aktuellen Spieltag"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Aktuelle Saison bestimmen
+        cursor.execute("SELECT DISTINCT season FROM matches_real ORDER BY season DESC LIMIT 1")
+        current_season = cursor.fetchone()[0]
+        
+        # Aktueller und nächster Spieltag
+        cursor.execute("""
+            SELECT DISTINCT matchday FROM matches_real 
+            WHERE season = ? 
+            ORDER BY matchday ASC
+        """, (current_season,))
+        
+        matchdays = [row[0] for row in cursor.fetchall()]
+        current_matchday = matchdays[0] if matchdays else 1
+        next_matchday = matchdays[1] if len(matchdays) > 1 else current_matchday
+        
+        conn.close()
+        return {
+            "current_matchday": current_matchday,
+            "next_matchday": next_matchday,
+            "predictions_available_until": next_matchday,
+            "season": current_season
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Laden der Spieltag-Info: {str(e)}")
+
+@app.get("/api/next-matchday")
+async def get_next_matchday():
+    """Nächste Spiele abrufen"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Aktuelle Saison bestimmen
+        cursor.execute("SELECT DISTINCT season FROM matches_real ORDER BY season DESC LIMIT 1")
+        current_season = cursor.fetchone()[0]
+        
+        # Nächsten Spieltag finden
+        cursor.execute("""
+            SELECT MIN(matchday) FROM matches_real 
+            WHERE season = ? AND is_finished = 0
+        """, (current_season,))
+        
+        next_matchday = cursor.fetchone()[0] or 1
+        
+        # Spiele des nächsten Spieltags
+        cursor.execute("""
+            SELECT 
+                m.match_id,
+                m.home_team_id,
+                m.away_team_id,
+                m.home_team_name,
+                m.away_team_name,
+                m.match_date,
+                m.matchday,
+                m.season
+            FROM matches_real m
+            WHERE m.season = ? AND m.matchday = ? 
+            ORDER BY m.match_date
+        """, (current_season, next_matchday))
+        
+        matches = []
+        for row in cursor.fetchall():
+            matches.append({
+                "id": row["match_id"],
+                "home_team": {
+                    "id": row["home_team_id"],
+                    "name": row["home_team_name"],
+                    "short_name": row["home_team_name"][:10]
+                },
+                "away_team": {
+                    "id": row["away_team_id"], 
+                    "name": row["away_team_name"],
+                    "short_name": row["away_team_name"][:10]
+                },
+                "date": row["match_date"],
+                "matchday": row["matchday"],
+                "season": row["season"]
+            })
+        
+        conn.close()
+        return matches
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Laden der nächsten Spiele: {str(e)}")
+
+@app.get("/api/predictions/{matchday}")
+async def get_predictions(matchday: int):
+    """Einfache Vorhersagen für einen Spieltag (Dummy-Daten)"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Aktuelle Saison bestimmen
+        cursor.execute("SELECT DISTINCT season FROM matches_real ORDER BY season DESC LIMIT 1")
+        current_season = cursor.fetchone()[0]
+        
+        # Spiele des Spieltags
+        cursor.execute("""
+            SELECT 
+                m.match_id,
+                m.home_team_id,
+                m.away_team_id,
+                m.home_team_name,
+                m.away_team_name,
+                m.match_date,
+                m.matchday,
+                m.season
+            FROM matches_real m
+            WHERE m.season = ? AND m.matchday = ? 
+            ORDER BY m.match_date
+        """, (current_season, matchday))
+        
+        predictions = []
+        for row in cursor.fetchall():
+            # Einfache Dummy-Vorhersagen
+            predictions.append({
+                "match": {
+                    "id": row["match_id"],
+                    "home_team": {
+                        "id": row["home_team_id"],
+                        "name": row["home_team_name"],
+                        "short_name": row["home_team_name"][:10]
+                    },
+                    "away_team": {
+                        "id": row["away_team_id"], 
+                        "name": row["away_team_name"],
+                        "short_name": row["away_team_name"][:10]
+                    },
+                    "date": row["match_date"],
+                    "matchday": row["matchday"],
+                    "season": row["season"]
+                },
+                "home_win_prob": 0.4,
+                "draw_prob": 0.3,
+                "away_win_prob": 0.3,
+                "predicted_score": "2:1",
+                "form_factors": {
+                    "home_form": 0.6,
+                    "away_form": 0.5,
+                    "home_goals_last_14": 1.5,
+                    "away_goals_last_14": 1.2
+                }
+            })
+        
+        conn.close()
+        return predictions
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Laden der Vorhersagen: {str(e)}")
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
