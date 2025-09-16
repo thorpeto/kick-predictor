@@ -105,20 +105,20 @@ async def get_table():
                 t.name,
                 t.icon_url,
                 t.short_name,
-                COUNT(CASE WHEN (m.team1_id = t.team_id AND m.points_team1 > m.points_team2) 
-                            OR (m.team2_id = t.team_id AND m.points_team2 > m.points_team1) THEN 1 END) as wins,
-                COUNT(CASE WHEN m.points_team1 = m.points_team2 AND (m.team1_id = t.team_id OR m.team2_id = t.team_id) THEN 1 END) as draws,
-                COUNT(CASE WHEN (m.team1_id = t.team_id AND m.points_team1 < m.points_team2) 
-                            OR (m.team2_id = t.team_id AND m.points_team2 < m.points_team1) THEN 1 END) as losses,
-                SUM(CASE WHEN m.team1_id = t.team_id THEN COALESCE(m.points_team1, 0) ELSE 0 END) +
-                SUM(CASE WHEN m.team2_id = t.team_id THEN COALESCE(m.points_team2, 0) ELSE 0 END) as goals_for,
-                SUM(CASE WHEN m.team1_id = t.team_id THEN COALESCE(m.points_team2, 0) ELSE 0 END) +
-                SUM(CASE WHEN m.team2_id = t.team_id THEN COALESCE(m.points_team1, 0) ELSE 0 END) as goals_against,
-                COUNT(CASE WHEN (m.team1_id = t.team_id AND m.points_team1 > m.points_team2) 
-                            OR (m.team2_id = t.team_id AND m.points_team2 > m.points_team1) THEN 1 END) * 3 +
-                COUNT(CASE WHEN m.points_team1 = m.points_team2 AND (m.team1_id = t.team_id OR m.team2_id = t.team_id) THEN 1 END) as points
+                COUNT(CASE WHEN (m.home_team_id = t.team_id AND m.home_goals > m.away_goals) 
+                            OR (m.away_team_id = t.team_id AND m.away_goals > m.home_goals) THEN 1 END) as wins,
+                COUNT(CASE WHEN m.home_goals = m.away_goals AND (m.home_team_id = t.team_id OR m.away_team_id = t.team_id) THEN 1 END) as draws,
+                COUNT(CASE WHEN (m.home_team_id = t.team_id AND m.home_goals < m.away_goals) 
+                            OR (m.away_team_id = t.team_id AND m.away_goals < m.home_goals) THEN 1 END) as losses,
+                SUM(CASE WHEN m.home_team_id = t.team_id THEN COALESCE(m.home_goals, 0) ELSE 0 END) +
+                SUM(CASE WHEN m.away_team_id = t.team_id THEN COALESCE(m.away_goals, 0) ELSE 0 END) as goals_for,
+                SUM(CASE WHEN m.home_team_id = t.team_id THEN COALESCE(m.away_goals, 0) ELSE 0 END) +
+                SUM(CASE WHEN m.away_team_id = t.team_id THEN COALESCE(m.home_goals, 0) ELSE 0 END) as goals_against,
+                COUNT(CASE WHEN (m.home_team_id = t.team_id AND m.home_goals > m.away_goals) 
+                            OR (m.away_team_id = t.team_id AND m.away_goals > m.home_goals) THEN 1 END) * 3 +
+                COUNT(CASE WHEN m.home_goals = m.away_goals AND (m.home_team_id = t.team_id OR m.away_team_id = t.team_id) THEN 1 END) as points
             FROM teams_real t
-            LEFT JOIN matches_real m ON (t.team_id = m.team1_id OR t.team_id = m.team2_id) 
+            LEFT JOIN matches_real m ON (t.team_id = m.home_team_id OR t.team_id = m.away_team_id) 
                 AND m.season = ? AND m.is_finished = 1
             GROUP BY t.team_id, t.name, t.icon_url, t.short_name
             ORDER BY points DESC, (goals_for - goals_against) DESC, goals_for DESC
