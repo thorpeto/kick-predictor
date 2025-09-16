@@ -10,6 +10,9 @@ import uvicorn
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import json
+import asyncio
+from real_data_sync import RealDataSync
+from gameday_updater import auto_updater, start_auto_updater, stop_auto_updater, get_updater_status
 
 app = FastAPI(
     title="Kick Predictor API - Real Data Edition",
@@ -760,6 +763,90 @@ async def get_prediction_quality():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error calculating prediction quality: {str(e)}")
 
+@app.post("/api/update-data")
+async def update_data():
+    """Manuelles Update der Spieltag-Daten"""
+    try:
+        sync = RealDataSync()
+        
+        # Inkrementelles Update der aktuellen Saison
+        current_matches = await sync.fetch_matches_from_season("2025")
+        if current_matches:
+            sync.save_matches_to_db(current_matches)
+            sync.update_season_info()
+            
+            # Neue Statistiken
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT COUNT(*) FROM matches_real WHERE season = '2025' AND is_finished = 1")
+            finished_matches = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT MAX(matchday) FROM matches_real WHERE season = '2025' AND is_finished = 1")
+            last_matchday = cursor.fetchone()[0]
+            
+            conn.close()
+            
+            return {
+                "status": "success",
+                "message": "Daten erfolgreich aktualisiert",
+                "updated_at": datetime.now().isoformat(),
+                "stats": {
+                    "finished_matches": finished_matches,
+                    "last_completed_matchday": last_matchday,
+                    "total_matches_updated": len(current_matches)
+                }
+            }
+        else:
+            return {
+                "status": "no_new_data",
+                "message": "Keine neuen Daten verfügbar",
+                "updated_at": datetime.now().isoformat()
+            }
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Update: {str(e)}")
+
+@app.get("/api/next-matchday-info")
+async def get_next_matchday_info():
+    """Get information about the next matchday"""
+    try:
+        sync_service = RealDataSync()
+        info = sync_service.get_next_matchday_info()
+        
+        # Add auto-updater status
+        updater_status = get_updater_status()
+        info.update({
+            "auto_updater": updater_status
+        })
+        
+        return info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Abrufen der Spieltag-Informationen: {str(e)}")
+
+@app.get("/api/auto-updater/status")
+async def get_auto_updater_status():
+    """Get the current status of the auto-updater"""
+    return get_updater_status()
+
+@app.post("/api/auto-updater/start")
+async def start_auto_updater_endpoint():
+    """Start the auto-updater manually"""
+    try:
+        start_auto_updater()
+        return {"status": "success", "message": "Auto-Updater gestartet"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Starten des Auto-Updaters: {str(e)}")
+
+@app.post("/api/auto-updater/stop")
+async def stop_auto_updater_endpoint():
+    """Stop the auto-updater manually"""
+    try:
+        stop_auto_updater()
+        return {"status": "success", "message": "Auto-Updater gestoppt"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Stoppen des Auto-Updaters: {str(e)}")
+
 @app.get("/api/database-stats")
 async def get_database_stats():
     """Hole Datenbankstatistiken der echten Daten"""
@@ -782,6 +869,10 @@ async def get_database_stats():
         cursor.execute("SELECT COUNT(*) FROM matches_real WHERE season = '2024' AND is_finished = 1")
         finished_previous = cursor.fetchone()[0]
         
+        # Letzte Aktualisierung
+        cursor.execute("SELECT MAX(synced_at) FROM matches_real WHERE season = '2025'")
+        last_sync = cursor.fetchone()[0]
+        
         conn.close()
         
         return {
@@ -792,7 +883,8 @@ async def get_database_stats():
             "finished_previous_season": finished_previous,
             "total_matches": current_matches + previous_matches,
             "data_source": "real_bundesliga_openligadb",
-            "last_sync": "2024/25 Season: 3 Spieltage, 2023/24 Season: Complete"
+            "last_sync": last_sync,
+            "last_sync_readable": f"2024/25 Season: {finished_current} gespielt, 2023/24 Season: Complete"
         }
         
     except Exception as e:
@@ -803,6 +895,16 @@ async def get_database_stats():
             "previous_season_matches": 0,
             "status": "database_error"
         }
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the auto-updater when the server starts"""
+    start_auto_updater()
+    
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop the auto-updater when the server shuts down"""
+    stop_auto_updater()
 
 if __name__ == "__main__":
     import uvicorn

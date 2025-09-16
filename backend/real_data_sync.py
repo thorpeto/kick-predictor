@@ -323,6 +323,84 @@ class RealDataSync:
             'previous_season_matches': previous_matches_count,
             'finished_matches': finished_matches_count
         }
+    
+    def get_next_matchday_info(self) -> Dict[str, Any]:
+        """Get information about the next matchday and upcoming matches"""
+        conn = self.get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Get current matchday status
+            cursor.execute("""
+                SELECT MAX(matchday) as last_matchday
+                FROM matches_real 
+                WHERE season = 2025 AND is_finished = 1
+            """)
+            result = cursor.fetchone()
+            last_completed_matchday = result[0] if result[0] else 0
+            
+            # Get next upcoming matches
+            cursor.execute("""
+                SELECT matchday, COUNT(*) as matches_count,
+                       MIN(match_date) as next_match_date
+                FROM matches_real 
+                WHERE season = 2025 AND is_finished = 0
+                GROUP BY matchday
+                ORDER BY matchday
+                LIMIT 3
+            """)
+            upcoming_matchdays = cursor.fetchall()
+            
+            # Check if there are matches today or this weekend
+            now = datetime.now()
+            weekend_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            if now.weekday() > 4:  # If it's already weekend
+                weekend_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            else:  # Go to next Friday
+                days_until_friday = (4 - now.weekday()) % 7
+                weekend_start = (now + timedelta(days=days_until_friday)).replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            weekend_end = weekend_start + timedelta(days=3)  # Friday to Sunday
+            
+            cursor.execute("""
+                SELECT COUNT(*) as weekend_matches
+                FROM matches_real 
+                WHERE season = 2025 AND is_finished = 0
+                AND match_date BETWEEN ? AND ?
+            """, (weekend_start.isoformat(), weekend_end.isoformat()))
+            
+            weekend_matches = cursor.fetchone()[0]
+            
+            return {
+                "current_season": 2025,
+                "last_completed_matchday": last_completed_matchday,
+                "upcoming_matchdays": [
+                    {
+                        "matchday": row[0],
+                        "matches_count": row[1],
+                        "next_match_date": row[2]
+                    } for row in upcoming_matchdays
+                ],
+                "weekend_matches": weekend_matches,
+                "is_game_weekend": weekend_matches > 0,
+                "weekend_period": {
+                    "start": weekend_start.isoformat(),
+                    "end": weekend_end.isoformat()
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting next matchday info: {e}")
+            return {
+                "error": str(e),
+                "current_season": 2025,
+                "last_completed_matchday": 0,
+                "upcoming_matchdays": [],
+                "weekend_matches": 0,
+                "is_game_weekend": False
+            }
+        finally:
+            conn.close()
 
 async def main():
     """Führe die vollständige Synchronisation aus"""
