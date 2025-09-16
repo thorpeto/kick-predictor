@@ -1,0 +1,54 @@
+steps:
+  # Build the backend Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '-f'
+      - 'backend/Dockerfile.prod'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:${SHORT_SHA}'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:latest'
+      - './backend'
+    dir: '.'
+
+  # Push the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:${SHORT_SHA}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:latest'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'kick-predictor-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:${SHORT_SHA}'
+      - '--region'
+      - 'europe-west1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--max-instances'
+      - '10'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--timeout'
+      - '300'
+
+# Configure Cloud Build to use a machine with more resources
+options:
+  machineType: 'E2_HIGHCPU_8'
+  substitution_option: 'ALLOW_LOOSE'
+
+# Set timeout for the entire build
+timeout: '1200s'
