@@ -28,8 +28,8 @@ interface MatchResult {
 interface FormFactor {
   home_form: number;
   away_form: number;
-  home_xg_last_6: number;
-  away_xg_last_6: number;
+  home_goals_last_14: number;
+  away_goals_last_14: number;
 }
 
 interface TableEntry {
@@ -211,7 +211,7 @@ export const fetchTeamForm = async (teamId: number): Promise<number> => {
   try {
     const url = buildApiUrl(`/team/${teamId}/form`);
     const response = await axios.get(url)
-    return response.data.form
+    return response.data.details.form_percentage
   } catch (error) {
     console.error(`Fehler beim Abrufen der Form für Team ${teamId}:`, error)
     throw error

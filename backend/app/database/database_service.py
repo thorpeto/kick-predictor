@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import logging
 
 from app.database.models import Team, Match, Prediction, PredictionQuality, SyncStatus, HitType
-from app.database.config_enhanced import get_enhanced_database_session, enhanced_db_config
+from app.database.config_enhanced import get_enhanced_database_session
 from app.models.schemas import Match as MatchSchema, Team as TeamSchema
 
 logger = logging.getLogger(__name__)
@@ -18,11 +18,13 @@ class DatabaseService:
         self.session = None
     
     def __enter__(self):
+        from app.database.config_enhanced import enhanced_db_config
         self.session = enhanced_db_config.get_session()
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.session:
+            from app.database.config_enhanced import enhanced_db_config
             if exc_type:
                 self.session.rollback()
             else:

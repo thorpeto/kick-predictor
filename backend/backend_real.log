@@ -1,0 +1,127 @@
+nohup: ignoring input
+INFO:     Started server process [20988]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     80.128.137.203:0 - "GET / HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40968 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34994 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35770 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36624 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49430 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/1635/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/1635/matches HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48298 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38566 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/7/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/7/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48836 - "GET /api/team/7/matches HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48258 - "GET /api/team/7/matches HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56834 - "GET /api/team/7/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57604 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59348 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36010 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59716 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58324 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33920 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/prediction-quality HTTP/1.1" 404 Not Found
+INFO:     80.128.137.203:0 - "GET /api/prediction-quality HTTP/1.1" 404 Not Found
+INFO:     80.128.137.203:0 - "GET /api/prediction-quality HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47310 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41080 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57286 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/3 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/matchday-info HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/predictions/4 HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/form HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/team/40/matches HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/table HTTP/1.1" 200 OK
+INFO:     80.128.137.203:0 - "GET /api/prediction-quality HTTP/1.1" 404 Not Found
+INFO:     80.128.137.203:0 - "GET /api/prediction-quality HTTP/1.1" 404 Not Found
+INFO:     80.128.137.203:0 - "GET /api/prediction-quality HTTP/1.1" 404 Not Found
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20988]

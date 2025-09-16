@@ -10,6 +10,8 @@ from app.models.schemas import (
     MatchResult, Team, TableEntry, MatchdayInfo, Match, Prediction
 )
 from app.interfaces.data_interface import DataServiceInterface
+from app.database.database_service import DatabaseService
+from app.database.models import Team as DBTeam, Match as DBMatch, Prediction as DBPrediction, PredictionQuality
 
 logger = logging.getLogger(__name__)
 
@@ -42,64 +44,68 @@ class EnhancedDataService(DataServiceInterface):
         # Fallback zur Original-API-Implementierung
         return await self._fallback_to_api_table()
     
-    async def get_prediction_quality(self) -> Dict:
+    async def get_prediction_quality(self) -> dict:
         """
-        Hole Prediction Quality aus der Datenbank, mit API-Fallback
+        Hole Vorhersage-Qualitäts-Daten primär aus der Datenbank
+        Falls leer, verwende API als Fallback
         """
         # Cache check
         if self._is_quality_cache_valid():
-            logger.info("Quality Cache Hit")
-            return self._quality_cache or {}
+            return self._quality_cache or {"entries": [], "stats": {}, "source": "cache"}
+        
+        logger.info("Loading prediction quality data from database...")
         
         try:
-            # Versuche zuerst Daten aus der Datenbank zu holen
-            from app.database.database_service import DatabaseService
-            from app.database.models import PredictionQuality, Prediction, Match, Team
-            from sqlalchemy.orm import aliased
-            
             with DatabaseService() as db:
-                # Aliases für Teams
-                home_team = aliased(Team)
-                away_team = aliased(Team)
+                from sqlalchemy.orm import aliased
+                away_team_alias = aliased(DBTeam)
                 
-                # Hole alle PredictionQuality-Einträge mit zugehörigen Daten
-                quality_entries = db.session.query(
-                    PredictionQuality, Prediction, Match, home_team, away_team
+                # Query prediction quality entries with all related data
+                quality_entries = db.session.query(PredictionQuality).join(
+                    DBPrediction
                 ).join(
-                    Match, PredictionQuality.match_id == Match.id
+                    DBMatch
                 ).join(
-                    Prediction, Prediction.match_id == Match.id
+                    DBTeam, DBMatch.home_team_id == DBTeam.id
                 ).join(
-                    home_team, Match.home_team_id == home_team.id
-                ).join(
-                    away_team, Match.away_team_id == away_team.id
-                ).all()
+                    away_team_alias, DBMatch.away_team_id == away_team_alias.id
+                ).order_by(DBMatch.date.desc()).all()
                 
-                # Wenn Daten in der Datenbank vorhanden sind
                 if quality_entries:
+                    logger.info(f"Found {len(quality_entries)} quality entries in database")
+                    
                     entries = []
                     stats = {
                         "total_predictions": 0,
                         "exact_matches": 0,
                         "tendency_matches": 0,
-                        "misses": 0
+                        "misses": 0,
+                        "exact_match_rate": 0.0,
+                        "tendency_match_rate": 0.0,
+                        "overall_accuracy": 0.0,
+                        "quality_score": 0.0
                     }
                     
-                    for quality, prediction, match, home_team_obj, away_team_obj in quality_entries:
+                    for quality in quality_entries:
+                        prediction = quality.prediction
+                        match = prediction.match
+                        home_team = match.home_team
+                        away_team = match.away_team
+                        
                         entry = {
                             "match": {
-                                "id": match.id,
+                                "match_id": match.external_id,
                                 "home_team": {
-                                    "id": home_team_obj.id,
-                                    "name": home_team_obj.name,
-                                    "short_name": home_team_obj.short_name,
-                                    "logo_url": home_team_obj.logo_url
+                                    "id": home_team.external_id,
+                                    "name": home_team.name,
+                                    "short_name": home_team.short_name,
+                                    "logo_url": home_team.logo_url
                                 },
                                 "away_team": {
-                                    "id": away_team_obj.id,
-                                    "name": away_team_obj.name,
-                                    "short_name": away_team_obj.short_name,
-                                    "logo_url": away_team_obj.logo_url
+                                    "id": away_team.external_id,
+                                    "name": away_team.name,
+                                    "short_name": away_team.short_name,
+                                    "logo_url": away_team.logo_url
                                 },
                                 "date": match.date.isoformat() if match.date else None,
                                 "matchday": match.matchday,
@@ -152,11 +158,13 @@ class EnhancedDataService(DataServiceInterface):
                     
                     logger.info(f"Loaded prediction quality from database: {len(entries)} entries")
                     return result
+                else:
+                    logger.info("No quality entries found in database, falling back to API")
                 
         except Exception as db_error:
             logger.warning(f"Database query failed, falling back to API: {str(db_error)}")
         
-        # Fallback zur Original-API-Implementierung
+        # Fallback zur Original-API-Implementierung nur wenn DB leer ist
         logger.info("Falling back to API for prediction quality")
         result = await self._fallback_to_api_quality()
         if isinstance(result, dict):

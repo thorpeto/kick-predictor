@@ -104,7 +104,19 @@ const TeamAnalysisPage = () => {
 
     // Verarbeite die Spieldaten
     const processedMatches = matchesData.map(match => {
-      const isHome = match.match.home_team.id === selectedTeamId
+      // Robuste isHome-Berechnung: ID-basiert mit Fallback auf Namen
+      let isHome = false
+      if (match.match.home_team.id === selectedTeamId) {
+        isHome = true
+      } else if (match.match.away_team.id === selectedTeamId) {
+        isHome = false
+      } else {
+        // Fallback: Team-Namen vergleichen
+        const selectedTeam = teams.find(t => t.id === selectedTeamId)
+        if (selectedTeam) {
+          isHome = match.match.home_team.name === selectedTeam.name
+        }
+      }
       
       return {
         matchday: match.match.matchday,
@@ -118,7 +130,7 @@ const TeamAnalysisPage = () => {
           : (match.away_goals > match.home_goals ? 'W' : match.away_goals < match.home_goals ? 'L' : 'D'),
         xG: isHome ? match.home_xg.toFixed(1) : match.away_xg.toFixed(1)
       }
-    }).sort((a, b) => a.matchday - b.matchday) // Sortiere nach Spieltag
+    }) // Backend liefert bereits korrekt sortiert (neueste zuerst)
 
     // Berechne die Statistiken
     const goalsScored = processedMatches.reduce((sum, match) => sum + match.goalsScored, 0)
@@ -209,11 +221,11 @@ const TeamAnalysisPage = () => {
             <h2 className="text-xl font-bold mb-4">{teamData.team.name} - Formübersicht</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h3 className="font-semibold mb-2">Aktuelle Form: {(teamData.form * 100).toFixed(0)}%</h3>
+                <h3 className="font-semibold mb-2">Aktuelle Form: {teamData.form.toFixed(1)}%</h3>
                 <div className="w-full bg-gray-200 rounded-full h-4">
                   <div 
                     className="bg-bundesliga-red h-4 rounded-full" 
-                    style={{ width: `${teamData.form * 100}%` }}
+                    style={{ width: `${Math.min(teamData.form, 100)}%` }}
                   ></div>
                 </div>
                 
@@ -228,7 +240,11 @@ const TeamAnalysisPage = () => {
                           match.result === 'D' ? 'bg-yellow-500' : 
                           'bg-red-600'
                         }`}
-                        title={`${match.isHome ? 'Heim' : 'Auswärts'} gegen ${match.opponent}: ${match.goalsScored}:${match.goalsConceded}`}
+                        title={`${match.isHome ? 'Heim' : 'Auswärts'} gegen ${match.opponent} - Ergebnis: ${
+                          match.isHome 
+                            ? `${match.goalsScored}:${match.goalsConceded}` 
+                            : `${match.goalsConceded}:${match.goalsScored}`
+                        } (${match.result === 'W' ? 'Sieg' : match.result === 'D' ? 'Unentschieden' : 'Niederlage'})`}
                       >
                         {match.result}
                       </div>

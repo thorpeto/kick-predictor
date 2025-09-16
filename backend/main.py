@@ -1,5 +1,6 @@
 import os
 import logging
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,63 +13,69 @@ logger = logging.getLogger(__name__)
 # Lade Umgebungsvariablen
 load_dotenv()
 
-# Initialisiere Enhanced Database früh im Startup-Prozess mit Retry-Logik
-try:
-    from app.database.config_enhanced import init_enhanced_database
-    init_enhanced_database()
-    logger.info("Enhanced database initialization successful")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager"""
+    # Startup
+    logger.info("Starting application...")
     
-    # Auto-Sync beim Start wenn aktiviert (funktioniert mit PostgreSQL und SQLite)
-    if os.getenv("AUTO_SYNC_ON_START") == "true":
-        logger.info("Auto-sync on start enabled, triggering background sync...")
-        try:
-            import threading
-            import requests
+    # Initialisiere Enhanced Database früh im Startup-Prozess
+    try:
+        from app.database.config_enhanced import init_enhanced_database
+        init_enhanced_database()
+        logger.info("Enhanced database initialization successful")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {str(e)}")
+        # In Produktion versuche es nochmal nach kurzer Wartezeit
+        if os.getenv("ENVIRONMENT") == "production":
             import time
+            logger.info("Retrying database initialization in 5 seconds...")
+            time.sleep(5)
+            try:
+                from app.database.config_enhanced import init_enhanced_database as retry_init
+                retry_init()
+                logger.info("Database initialization successful on retry")
+            except Exception as retry_error:
+                logger.error(f"Database initialization failed on retry: {str(retry_error)}")
+    
+    # Starte Scheduler
+    try:
+        from app.services.scheduler_service import scheduler_service
+        await scheduler_service.start()
+        logger.info("Background scheduler started")
+    except Exception as e:
+        logger.error(f"Failed to start scheduler: {e}")
+    
+    # Auto-Sync beim Start wenn aktiviert
+    if os.getenv("AUTO_SYNC_ON_START") == "true":
+        logger.info("Auto-sync on start enabled, triggering initial sync...")
+        try:
+            from app.services.sync_service import SyncService
+            sync_service = SyncService()
             
-            def background_sync():
-                # Warte kurz bis Server vollständig gestartet ist
-                time.sleep(10)
-                try:
-                    port = os.getenv("PORT", "8000")
-                    # Triggere Full-Sync über internen API-Call
-                    response = requests.post(f"http://localhost:{port}/api/db/full-sync", timeout=300)
-                    if response.status_code == 200:
-                        logger.info("Auto-sync completed successfully")
-                    else:
-                        logger.error(f"Auto-sync failed with status {response.status_code}")
-                except Exception as e:
-                    logger.error(f"Auto-sync failed: {e}")
-            
-            # Starte Background-Sync
-            sync_thread = threading.Thread(target=background_sync, daemon=True)
-            sync_thread.start()
-            logger.info("Background sync scheduled")
+            # Führe initiale Synchronisation durch
+            result = await sync_service.sync_all_data()
+            logger.info(f"Initial sync completed: {result}")
             
         except Exception as e:
-            logger.error(f"Background sync setup failed: {e}")
+            logger.error(f"Auto-sync failed: {e}")
     
-except Exception as e:
-    logger.error(f"Database initialization failed: {str(e)}")
-    # In Produktion versuche es nochmal nach kurzer Wartezeit (für Render Disk Mount)
-    if os.getenv("ENVIRONMENT") == "production":
-        import time
-        from app.database.config_enhanced import init_enhanced_database as retry_init_database
-        logger.info("Retrying database initialization in 5 seconds...")
-        time.sleep(5)
-        try:
-            retry_init_database()
-            logger.info("Database initialization successful on retry")
-        except Exception as retry_error:
-            logger.error(f"Database initialization failed on retry: {str(retry_error)}")
-            # Continue anyway - database will be initialized on first request
-    else:
-        raise
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down application...")
+    try:
+        from app.services.scheduler_service import scheduler_service
+        await scheduler_service.stop()
+        logger.info("Background scheduler stopped")
+    except Exception as e:
+        logger.error(f"Failed to stop scheduler: {e}")
 
 app = FastAPI(
     title="Kick Predictor API",
     description="API für die Vorhersage von Bundesliga-Spielergebnissen",
     version="0.1.0",
+    lifespan=lifespan
 )
 
 # CORS-Einstellungen für Frontend-Verbindung

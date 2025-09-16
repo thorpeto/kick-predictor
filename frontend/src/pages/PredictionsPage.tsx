@@ -210,12 +210,12 @@ const PredictionsPage = () => {
                 <h4 className="font-semibold mb-2">Formfaktoren:</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p><span className="font-medium">Form {prediction.match.home_team.name}:</span> {(prediction.form_factors.home_form * 100).toFixed(0)}%</p>
-                    <p><span className="font-medium">xG letzte 6 Spiele:</span> {prediction.form_factors.home_xg_last_6.toFixed(1)}</p>
+                    <p><span className="font-medium">Form {prediction.match.home_team.name}:</span> {prediction.form_factors.home_form.toFixed(1)}%</p>
+                    <p><span className="font-medium">Tore letzte 14 Spiele:</span> {prediction.form_factors.home_goals_last_14}</p>
                   </div>
                   <div>
-                    <p><span className="font-medium">Form {prediction.match.away_team.name}:</span> {(prediction.form_factors.away_form * 100).toFixed(0)}%</p>
-                    <p><span className="font-medium">xG letzte 6 Spiele:</span> {prediction.form_factors.away_xg_last_6.toFixed(1)}</p>
+                    <p><span className="font-medium">Form {prediction.match.away_team.name}:</span> {prediction.form_factors.away_form.toFixed(1)}%</p>
+                    <p><span className="font-medium">Tore letzte 14 Spiele:</span> {prediction.form_factors.away_goals_last_14}</p>
                   </div>
                 </div>
               </div>
