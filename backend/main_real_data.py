@@ -343,10 +343,23 @@ async def get_predictions(matchday: int):
             draw_prob /= total
             away_win_prob /= total
             
-            # Predicted Score basierend auf Form
-            home_expected = 1.0 + (home_form_factor - 0.5)
-            away_expected = 1.0 + (away_form_factor - 0.5)
-            predicted_score = f"{max(0, round(home_expected))}:{max(0, round(away_expected))}"
+            # Predicted Score basierend auf Form und Realismus
+            # Basis-Erwartung: Bundesliga-Durchschnitt ~1.5 Tore pro Team
+            home_base_goals = 1.5
+            away_base_goals = 1.3  # Auswärtsteams etwas schwächer
+            
+            # Form-Multiplikator (0.6 bis 1.4)
+            home_form_multiplier = 0.6 + (home_form_factor * 0.8)
+            away_form_multiplier = 0.6 + (away_form_factor * 0.8)
+            
+            # Erwartete Tore
+            home_expected = home_base_goals * home_form_multiplier
+            away_expected = away_base_goals * away_form_multiplier
+            
+            # Runden aber mit Minimum 0 und realistischem Maximum
+            predicted_home = max(0, min(4, round(home_expected)))
+            predicted_away = max(0, min(4, round(away_expected)))
+            predicted_score = f"{predicted_home}:{predicted_away}"
             
             predictions.append({
                 "match": {
@@ -466,6 +479,175 @@ async def get_team_matches(team_id: int):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching team matches: {str(e)}")
+
+@app.get("/api/prediction-quality")
+async def get_prediction_quality():
+    """Analysiere die Qualität aller bisherigen Vorhersagen"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Hole alle abgeschlossenen Spiele der aktuellen Saison
+        cursor.execute("""
+            SELECT m.match_id, m.home_team_name, m.away_team_name, m.match_date, 
+                   m.matchday, m.season, m.home_goals, m.away_goals,
+                   ht.team_id as home_team_id, at.team_id as away_team_id,
+                   ht.short_name as home_short, at.short_name as away_short,
+                   ht.icon_url as home_logo, at.icon_url as away_logo
+            FROM matches_real m
+            LEFT JOIN teams_real ht ON m.home_team_id = ht.team_id
+            LEFT JOIN teams_real at ON m.away_team_id = at.team_id
+            WHERE m.season = '2025' 
+            AND m.is_finished = 1
+            AND m.home_goals IS NOT NULL 
+            AND m.away_goals IS NOT NULL
+            ORDER BY m.matchday, m.match_date
+        """)
+        finished_matches = cursor.fetchall()
+        conn.close()
+        
+        if not finished_matches:
+            return {
+                "entries": [],
+                "stats": {
+                    "total_predictions": 0,
+                    "exact_matches": 0,
+                    "tendency_matches": 0,
+                    "misses": 0,
+                    "exact_match_rate": 0.0,
+                    "tendency_match_rate": 0.0,
+                    "overall_accuracy": 0.0,
+                    "quality_score": 0.0
+                },
+                "processed_matches": 0,
+                "cached_at": datetime.now().isoformat()
+            }
+        
+        entries = []
+        exact_matches = 0
+        tendency_matches = 0
+        misses = 0
+        
+        for match_data in finished_matches:
+            match_id, home_name, away_name, match_date, matchday, season, home_goals, away_goals, home_id, away_id, home_short, away_short, home_logo, away_logo = match_data
+            
+            # Berechne Form zum Zeitpunkt des Spiels (aus historischen Daten)
+            home_form = calculate_team_form(home_id) if home_id else {"form_percentage": 50.0}
+            away_form = calculate_team_form(away_id) if away_id else {"form_percentage": 50.0}
+            
+            # Berechne Vorhersage basierend auf Form (gleiche Logik wie im predictions endpoint)
+            home_form_factor = home_form["form_percentage"] / 100
+            away_form_factor = away_form["form_percentage"] / 100
+            
+            # Basis-Wahrscheinlichkeiten
+            home_base = 0.4
+            draw_base = 0.3
+            away_base = 0.3
+            
+            # Anpassung basierend auf Form
+            form_diff = home_form_factor - away_form_factor
+            home_win_prob = max(0.1, min(0.8, home_base + form_diff * 0.3))
+            away_win_prob = max(0.1, min(0.8, away_base - form_diff * 0.3))
+            draw_prob = max(0.1, 1.0 - home_win_prob - away_win_prob)
+            
+            # Normalisierung
+            total = home_win_prob + draw_prob + away_win_prob
+            home_win_prob /= total
+            draw_prob /= total
+            away_win_prob /= total
+            
+            # Vorhersage-Score basierend auf Form (gleiche Logik wie im predictions endpoint)
+            home_base_goals = 1.5
+            away_base_goals = 1.3
+            
+            home_form_multiplier = 0.6 + (home_form_factor * 0.8)
+            away_form_multiplier = 0.6 + (away_form_factor * 0.8)
+            
+            home_expected = home_base_goals * home_form_multiplier
+            away_expected = away_base_goals * away_form_multiplier
+            
+            predicted_home = max(0, min(4, round(home_expected)))
+            predicted_away = max(0, min(4, round(away_expected)))
+            predicted_score = f"{predicted_home}:{predicted_away}"
+            
+            # Tatsächliches Ergebnis
+            actual_score = f"{home_goals}:{away_goals}"
+            
+            # Analyse der Vorhersagequalität
+            exact_score_correct = (predicted_home == home_goals and predicted_away == away_goals)
+            
+            # Tendenz-Analyse
+            predicted_outcome = 'draw' if predicted_home == predicted_away else ('home' if predicted_home > predicted_away else 'away')
+            actual_outcome = 'draw' if home_goals == away_goals else ('home' if home_goals > away_goals else 'away')
+            tendency_correct = (predicted_outcome == actual_outcome)
+            
+            # Kategorisierung
+            if exact_score_correct:
+                hit_type = 'exact_match'
+                exact_matches += 1
+            elif tendency_correct:
+                hit_type = 'tendency_match'
+                tendency_matches += 1
+            else:
+                hit_type = 'miss'
+                misses += 1
+            
+            entries.append({
+                "match": {
+                    "id": match_id,
+                    "home_team": {
+                        "id": home_id,
+                        "name": home_name,
+                        "short_name": home_short or home_name[:3].upper(),
+                        "logo_url": home_logo or ""
+                    },
+                    "away_team": {
+                        "id": away_id,
+                        "name": away_name,
+                        "short_name": away_short or away_name[:3].upper(),
+                        "logo_url": away_logo or ""
+                    },
+                    "date": match_date,
+                    "matchday": matchday,
+                    "season": season
+                },
+                "predicted_score": predicted_score,
+                "actual_score": actual_score,
+                "predicted_home_win_prob": round(home_win_prob, 3),
+                "predicted_draw_prob": round(draw_prob, 3),
+                "predicted_away_win_prob": round(away_win_prob, 3),
+                "hit_type": hit_type,
+                "tendency_correct": tendency_correct,
+                "exact_score_correct": exact_score_correct
+            })
+        
+        # Statistiken berechnen
+        total_predictions = len(entries)
+        exact_match_rate = exact_matches / total_predictions if total_predictions > 0 else 0
+        tendency_match_rate = tendency_matches / total_predictions if total_predictions > 0 else 0
+        overall_accuracy = (exact_matches + tendency_matches) / total_predictions if total_predictions > 0 else 0
+        
+        # Qualitätsscore: Exakte Treffer zählen 3x, Tendenz 1x
+        quality_score = (exact_matches * 3 + tendency_matches) / (total_predictions * 3) if total_predictions > 0 else 0
+        
+        return {
+            "entries": entries,
+            "stats": {
+                "total_predictions": total_predictions,
+                "exact_matches": exact_matches,
+                "tendency_matches": tendency_matches,
+                "misses": misses,
+                "exact_match_rate": round(exact_match_rate, 3),
+                "tendency_match_rate": round(tendency_match_rate, 3),
+                "overall_accuracy": round(overall_accuracy, 3),
+                "quality_score": round(quality_score, 3)
+            },
+            "processed_matches": total_predictions,
+            "cached_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating prediction quality: {str(e)}")
 
 @app.get("/api/database-stats")
 async def get_database_stats():
