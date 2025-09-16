@@ -57,12 +57,19 @@ class EnhancedDatabaseConfig:
                 # Dev-Container oder lokale Entwicklung
                 self.db_path = '/workspaces/kick-predictor/backend/kick_predictor.db'
             
-            self.database_url = f"sqlite:///{self.db_path}"
+            # Ensure correct SQLite URL format (3 slashes total)
+            self.database_url = f"sqlite://{self.db_path}"
         
         # Fallback-Mechanismus für SQLite wenn Primary Path nicht funktioniert
         if self.db_type == 'sqlite':
             self._setup_fallback_paths()
             self._ensure_directory_exists()
+        
+        # Debug output
+        logger.info(f"Database Type: {self.db_type}")
+        logger.info(f"Database URL: {self.database_url}")
+        if self.db_path:
+            logger.info(f"Database Path: {self.db_path}")
         
         # Engine Configuration based on database type
         self._create_engine()
@@ -109,15 +116,12 @@ class EnhancedDatabaseConfig:
     
     def _setup_fallback_paths(self):
         """Setup fallback paths for SQLite in different environments"""
-        self.fallback_paths = []
-        
-        if os.getenv('ENVIRONMENT') == 'production' or os.getenv('RENDER'):
-            # Render.com Fallback-Pfade
-            self.fallback_paths = [
-                '/tmp/kick_predictor.db',  # Temporäres Verzeichnis (immer beschreibbar)
-                '/app/kick_predictor.db',  # App-Root
-                './kick_predictor.db'     # Current directory
-            ]
+        self.fallback_paths = [
+            '/tmp/kick_predictor.db',  # Temporäres Verzeichnis (immer beschreibbar)
+            '/app/kick_predictor.db',  # App-Root
+            './kick_predictor.db',     # Current directory
+            '/workspaces/kick-predictor/backend/kick_predictor.db'  # Dev-Container path
+        ]
     
     def _ensure_directory_exists(self):
         """Ensure SQLite database directory exists with fallback handling"""
