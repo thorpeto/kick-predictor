@@ -17,7 +17,7 @@ services:
       - key: PORT
         value: 10000
       - key: DATABASE_URL
-        value: postgresql://postgres.zfgyjuijxpgnhpereoyn:XLJ8PS59rThpOEBC@aws-1-eu-central-1.pooler.supabase.com:6543/postgres
+        value: postgresql://postgres:TJBf9pKf4FhURFys@db.zfgyjuijxpgnhpereoyn.supabase.co:5432/postgres
       - key: ENABLE_BACKGROUND_SYNC
         value: "true"
       - key: SYNC_INTERVAL_HOURS
