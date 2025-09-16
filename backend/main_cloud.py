@@ -13,7 +13,7 @@ import json
 app = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.0.0"
+    version="3.0.1"
 )
 
 # CORS-Einstellungen
