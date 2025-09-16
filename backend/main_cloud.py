@@ -222,11 +222,63 @@ async def get_predictions():
 
 @app.get("/api/prediction-quality")
 async def get_prediction_quality():
-    """Vorhersage-Qualitäts-Statistiken"""
+    """Vorhersage-Qualitäts-Statistiken im erwarteten Frontend Format"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Hole die Prediction-Einträge
+        cursor.execute("""
+            SELECT 
+                match_info,
+                predicted_score,
+                actual_score,
+                hit_type,
+                tendency_correct,
+                exact_score_correct,
+                predicted_home_win_prob,
+                predicted_draw_prob,
+                predicted_away_win_prob
+            FROM prediction_quality
+            ORDER BY synced_at DESC
+            LIMIT 50
+        """)
+        
+        entries = []
+        for row in cursor.fetchall():
+            # Mock Match Structure da wir keine echten Match-Daten haben
+            match_info_parts = row["match_info"].split(" vs ")
+            home_team = match_info_parts[0] if len(match_info_parts) > 0 else "Team A"
+            away_team = match_info_parts[1] if len(match_info_parts) > 1 else "Team B"
+            
+            entries.append({
+                "match": {
+                    "id": 1,
+                    "home_team": {
+                        "id": 1,
+                        "name": home_team,
+                        "short_name": home_team[:10]
+                    },
+                    "away_team": {
+                        "id": 2,
+                        "name": away_team,
+                        "short_name": away_team[:10]
+                    },
+                    "date": "2025-09-16T15:30:00Z",
+                    "matchday": 1,
+                    "season": "2025"
+                },
+                "predicted_score": row["predicted_score"],
+                "actual_score": row["actual_score"],
+                "predicted_home_win_prob": row["predicted_home_win_prob"] or 0.5,
+                "predicted_draw_prob": row["predicted_draw_prob"] or 0.3,
+                "predicted_away_win_prob": row["predicted_away_win_prob"] or 0.2,
+                "hit_type": row["hit_type"],
+                "tendency_correct": bool(row["tendency_correct"]),
+                "exact_score_correct": bool(row["exact_score_correct"])
+            })
+        
+        # Berechne Statistiken
         cursor.execute("""
             SELECT 
                 COUNT(*) as total_predictions,
@@ -239,14 +291,24 @@ async def get_prediction_quality():
         total = stats["total_predictions"] or 0
         exact = stats["exact_matches"] or 0
         tendency = stats["tendency_matches"] or 0
+        misses = total - exact - (tendency - exact)  # tendency includes exact
         
-        result = {
+        stats_data = {
             "total_predictions": total,
             "exact_matches": exact,
             "tendency_matches": tendency,
-            "exact_accuracy": round((exact / total * 100), 2) if total > 0 else 0,
-            "tendency_accuracy": round((tendency / total * 100), 2) if total > 0 else 0,
-            "overall_accuracy": round(((exact + tendency) / total * 100), 2) if total > 0 else 0
+            "misses": misses,
+            "exact_match_rate": round((exact / total), 3) if total > 0 else 0,
+            "tendency_match_rate": round((tendency / total), 3) if total > 0 else 0,
+            "overall_accuracy": round(((exact + tendency) / total), 3) if total > 0 else 0,
+            "quality_score": round((exact * 3 + tendency * 1) / (total * 3), 3) if total > 0 else 0
+        }
+        
+        result = {
+            "entries": entries,
+            "stats": stats_data,
+            "processed_matches": total,
+            "cached_at": datetime.now().isoformat()
         }
         
         conn.close()
