@@ -1174,3 +1174,222 @@ INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HT
 INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
 INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
 INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 98: Form berechnet aus 14 Spielen: 0.43
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 7: Form berechnet aus 14 Spielen: 0.76
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 81: Form berechnet aus 14 Spielen: 0.36
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 65: Form berechnet aus 3 Spielen: 0.78
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 87: Form berechnet aus 14 Spielen: 0.29
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 100: Form berechnet aus 3 Spielen: 0.11
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 100: Form berechnet aus 3 Spielen: 0.11
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 98: Form berechnet aus 14 Spielen: 0.43
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 1635: Form berechnet aus 14 Spielen: 0.45
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 199: Form berechnet aus 14 Spielen: 0.33
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 134: Form berechnet aus 14 Spielen: 0.60
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 6: Form berechnet aus 14 Spielen: 0.55
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 16: Form berechnet aus 14 Spielen: 0.40
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 87: Form berechnet aus 14 Spielen: 0.29
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 175: Form berechnet aus 14 Spielen: 0.38
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 91: Form berechnet aus 14 Spielen: 0.57
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 95: Form berechnet aus 14 Spielen: 0.36
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 40: Form berechnet aus 14 Spielen: 0.79
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 131: Form berechnet aus 14 Spielen: 0.33
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 81: Form berechnet aus 14 Spielen: 0.36
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 7: Form berechnet aus 14 Spielen: 0.76
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 80: Form berechnet aus 14 Spielen: 0.48
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 65: Form berechnet aus 3 Spielen: 0.78
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 112: Form berechnet aus 14 Spielen: 0.45
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 6: Form berechnet aus 14 Spielen: 0.55
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 91: Form berechnet aus 14 Spielen: 0.57
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 112: Form berechnet aus 14 Spielen: 0.45
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 16: Form berechnet aus 14 Spielen: 0.40
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 81: Form berechnet aus 14 Spielen: 0.36
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 1635: Form berechnet aus 14 Spielen: 0.45
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 131: Form berechnet aus 14 Spielen: 0.33
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 65: Form berechnet aus 3 Spielen: 0.78
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 80: Form berechnet aus 14 Spielen: 0.48
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 175: Form berechnet aus 14 Spielen: 0.38
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 199: Form berechnet aus 14 Spielen: 0.33
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 7: Form berechnet aus 14 Spielen: 0.76
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 40: Form berechnet aus 14 Spielen: 0.79
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 100: Form berechnet aus 3 Spielen: 0.11
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 98: Form berechnet aus 14 Spielen: 0.43
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 95: Form berechnet aus 14 Spielen: 0.36
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 87: Form berechnet aus 14 Spielen: 0.29
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Team-ID 134: Form berechnet aus 14 Spielen: 0.60
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2025 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://api.openligadb.de/getmatchdata/bl1/2024 "HTTP/1.1 200 OK"
+INFO:app.services.data_service:Quality-Daten im Cache gespeichert (24h gültig)
+INFO:app.services.data_service:Qualitätsdaten verarbeitet: 27 Spiele
+INFO:     80.128.137.203:0 - "GET /api/prediction-quality HTTP/1.1" 200 OK
+ERROR:app.routes:Error getting database stats: (sqlite3.OperationalError) unable to open database file
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+INFO:     127.0.0.1:53784 - "GET /api/db/stats HTTP/1.1" 500 Internal Server Error
+ERROR:app.routes:Error getting database stats: (sqlite3.OperationalError) unable to open database file
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+INFO:     127.0.0.1:48976 - "GET /api/db/stats HTTP/1.1" 500 Internal Server Error
