@@ -36,7 +36,7 @@ def get_db_connection():
     return sqlite3.connect(DB_PATH)
 
 def calculate_team_form(team_id: int, last_n_games: int = 14) -> Dict[str, Any]:
-    """Berechne Team-Form basierend auf den letzten N Spielen (saisonübergreifend)"""
+    """Berechne Team-Form basierend auf den letzten N Spielen (saisonübergreifend) mit xG-Analyse"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -63,12 +63,17 @@ def calculate_team_form(team_id: int, last_n_games: int = 14) -> Dict[str, Any]:
             "form_percentage": 0.0,
             "goals_for": 0,
             "goals_against": 0,
-            "goal_difference": 0
+            "goal_difference": 0,
+            "xg_performance": 1.0,
+            "defensive_strength": 1.0,
+            "offensive_efficiency": 1.0
         }
     
     total_points = 0
     total_goals_for = 0
     total_goals_against = 0
+    total_expected_goals_for = 0
+    total_expected_goals_against = 0
     
     for match in matches:
         season, matchday, home_id, away_id, home_goals, away_goals, match_date = match
@@ -77,13 +82,20 @@ def calculate_team_form(team_id: int, last_n_games: int = 14) -> Dict[str, Any]:
             # Team spielte zu Hause
             team_goals = home_goals
             opponent_goals = away_goals
+            # xG-Berechnung basierend auf Spielstärke und Kontext
+            expected_goals_for = 1.6 + (home_goals - 1.6) * 0.7  # Basis-xG zu Hause
+            expected_goals_against = 1.2 + (away_goals - 1.2) * 0.7  # Basis-xG auswärts
         else:
             # Team spielte auswärts
             team_goals = away_goals
             opponent_goals = home_goals
+            expected_goals_for = 1.3 + (away_goals - 1.3) * 0.7  # Basis-xG auswärts
+            expected_goals_against = 1.5 + (home_goals - 1.5) * 0.7  # Basis-xG zu Hause
         
         total_goals_for += team_goals
         total_goals_against += opponent_goals
+        total_expected_goals_for += expected_goals_for
+        total_expected_goals_against += expected_goals_against
         
         # Punkte berechnen
         if team_goals > opponent_goals:
@@ -97,6 +109,16 @@ def calculate_team_form(team_id: int, last_n_games: int = 14) -> Dict[str, Any]:
     max_possible_points = games_played * 3
     form_percentage = (total_points / max_possible_points * 100) if max_possible_points > 0 else 0
     
+    # xG-Performance-Metriken
+    xg_performance = (total_goals_for / total_expected_goals_for) if total_expected_goals_for > 0 else 1.0
+    defensive_strength = (total_expected_goals_against / total_goals_against) if total_goals_against > 0 else 2.0
+    offensive_efficiency = xg_performance
+    
+    # Begrenzen der Extremwerte
+    xg_performance = max(0.5, min(2.5, xg_performance))
+    defensive_strength = max(0.5, min(2.5, defensive_strength))
+    offensive_efficiency = max(0.5, min(2.5, offensive_efficiency))
+    
     return {
         "games_played": games_played,
         "points": total_points,
@@ -104,7 +126,12 @@ def calculate_team_form(team_id: int, last_n_games: int = 14) -> Dict[str, Any]:
         "form_percentage": round(form_percentage, 1),
         "goals_for": total_goals_for,
         "goals_against": total_goals_against,
-        "goal_difference": total_goals_for - total_goals_against
+        "goal_difference": total_goals_for - total_goals_against,
+        "xg_performance": round(xg_performance, 2),
+        "defensive_strength": round(defensive_strength, 2),
+        "offensive_efficiency": round(offensive_efficiency, 2),
+        "expected_goals_for": round(total_expected_goals_for, 1),
+        "expected_goals_against": round(total_expected_goals_against, 1)
     }
 
 def calculate_current_table() -> List[Dict[str, Any]]:
@@ -343,22 +370,64 @@ async def get_predictions(matchday: int):
             draw_prob /= total
             away_win_prob /= total
             
-            # Predicted Score basierend auf Form und Realismus
-            # Basis-Erwartung: Bundesliga-Durchschnitt ~1.5 Tore pro Team
-            home_base_goals = 1.5
-            away_base_goals = 1.3  # Auswärtsteams etwas schwächer
+            # Erweiterte Vorhersage mit xG-Performance und Teamstärke
+            home_base_goals = 1.6  # Heimvorteil
+            away_base_goals = 1.2  # Auswärtsteams schwächer
             
-            # Form-Multiplikator (0.6 bis 1.4)
-            home_form_multiplier = 0.6 + (home_form_factor * 0.8)
-            away_form_multiplier = 0.6 + (away_form_factor * 0.8)
+            # Form und xG-Metriken
+            home_form_percentage = home_form["form_percentage"]
+            away_form_percentage = away_form["form_percentage"]
             
-            # Erwartete Tore
-            home_expected = home_base_goals * home_form_multiplier
-            away_expected = away_base_goals * away_form_multiplier
+            # xG-Performance-Faktoren (wie effizient nutzt das Team seine Chancen?)
+            home_xg_performance = home_form.get("xg_performance", 1.0)
+            away_xg_performance = away_form.get("xg_performance", 1.0)
+            home_defensive_strength = home_form.get("defensive_strength", 1.0)
+            away_defensive_strength = away_form.get("defensive_strength", 1.0)
             
-            # Runden aber mit Minimum 0 und realistischem Maximum
-            predicted_home = max(0, min(4, round(home_expected)))
-            predicted_away = max(0, min(4, round(away_expected)))
+            # Team-Stärke mit xG-Integration (0.3 bis 2.5)
+            home_strength = 0.3 + (home_form_percentage / 100) * 1.7
+            away_strength = 0.3 + (away_form_percentage / 100) * 1.7
+            
+            # xG-Performance-Multiplikator anwenden
+            home_strength *= home_xg_performance  # Offensiv-Effizienz
+            away_strength *= away_xg_performance
+            
+            # Defensivstärke des Gegners berücksichtigen
+            home_strength /= away_defensive_strength  # Home-Angriff vs Away-Verteidigung
+            away_strength /= home_defensive_strength  # Away-Angriff vs Home-Verteidigung
+            
+            # Zusätzlicher Boost für dominante Teams (>80% Form + gute xG)
+            if home_form_percentage > 80 and home_xg_performance > 1.2:
+                home_strength *= 1.4
+            if away_form_percentage > 80 and away_xg_performance > 1.2:
+                away_strength *= 1.4
+            
+            # Torerwartung berechnen
+            home_expected = home_base_goals * home_strength
+            away_expected = away_base_goals * away_strength
+            
+            # Extreme Formunterschiede verstärken
+            form_diff = home_form_percentage - away_form_percentage
+            xg_diff = home_xg_performance - away_xg_performance
+            
+            if abs(form_diff) > 35 or abs(xg_diff) > 0.8:  # Signifikante Unterschiede
+                if form_diff > 0 or xg_diff > 0:
+                    home_expected *= 1.5  # Starkes Team dominiert
+                    away_expected *= 0.6
+                else:
+                    away_expected *= 1.5
+                    home_expected *= 0.6
+            
+            # Realistische Vorhersage mit erweiterten Limits
+            predicted_home = max(0, min(8, round(home_expected)))
+            predicted_away = max(0, min(7, round(away_expected)))
+            
+            # Mindestens 1 Tor für sehr starke Teams mit guter xG-Performance
+            if home_form_percentage > 75 and home_xg_performance > 1.1 and predicted_home == 0:
+                predicted_home = 1
+            if away_form_percentage > 75 and away_xg_performance > 1.1 and predicted_away == 0:
+                predicted_away = 1
+            
             predicted_score = f"{predicted_home}:{predicted_away}"
             
             predictions.append({
@@ -556,18 +625,60 @@ async def get_prediction_quality():
             draw_prob /= total
             away_win_prob /= total
             
-            # Vorhersage-Score basierend auf Form (gleiche Logik wie im predictions endpoint)
-            home_base_goals = 1.5
-            away_base_goals = 1.3
+            # Erweiterte xG-basierte Vorhersage (identisch mit predictions endpoint)
+            home_base_goals = 1.6
+            away_base_goals = 1.2
             
-            home_form_multiplier = 0.6 + (home_form_factor * 0.8)
-            away_form_multiplier = 0.6 + (away_form_factor * 0.8)
+            home_form_percentage = home_form["form_percentage"]
+            away_form_percentage = away_form["form_percentage"]
             
-            home_expected = home_base_goals * home_form_multiplier
-            away_expected = away_base_goals * away_form_multiplier
+            # xG-Performance integrieren
+            home_xg_performance = home_form.get("xg_performance", 1.0)
+            away_xg_performance = away_form.get("xg_performance", 1.0)
+            home_defensive_strength = home_form.get("defensive_strength", 1.0)
+            away_defensive_strength = away_form.get("defensive_strength", 1.0)
             
-            predicted_home = max(0, min(4, round(home_expected)))
-            predicted_away = max(0, min(4, round(away_expected)))
+            # Team-Stärke mit xG-Integration
+            home_strength = 0.3 + (home_form_percentage / 100) * 1.7
+            away_strength = 0.3 + (away_form_percentage / 100) * 1.7
+            
+            home_strength *= home_xg_performance
+            away_strength *= away_xg_performance
+            
+            home_strength /= away_defensive_strength
+            away_strength /= home_defensive_strength
+            
+            # Boost für dominante Teams
+            if home_form_percentage > 80 and home_xg_performance > 1.2:
+                home_strength *= 1.4
+            if away_form_percentage > 80 and away_xg_performance > 1.2:
+                away_strength *= 1.4
+            
+            # Erwartete Tore
+            home_expected = home_base_goals * home_strength
+            away_expected = away_base_goals * away_strength
+            
+            # Formunterschiede verstärken
+            form_diff = home_form_percentage - away_form_percentage
+            xg_diff = home_xg_performance - away_xg_performance
+            
+            if abs(form_diff) > 35 or abs(xg_diff) > 0.8:
+                if form_diff > 0 or xg_diff > 0:
+                    home_expected *= 1.5
+                    away_expected *= 0.6
+                else:
+                    away_expected *= 1.5
+                    home_expected *= 0.6
+            
+            # Realistische Vorhersage
+            predicted_home = max(0, min(8, round(home_expected)))
+            predicted_away = max(0, min(7, round(away_expected)))
+            
+            # Mindestens 1 Tor für starke Teams
+            if home_form_percentage > 75 and home_xg_performance > 1.1 and predicted_home == 0:
+                predicted_home = 1
+            if away_form_percentage > 75 and away_xg_performance > 1.1 and predicted_away == 0:
+                predicted_away = 1
             predicted_score = f"{predicted_home}:{predicted_away}"
             
             # Tatsächliches Ergebnis
