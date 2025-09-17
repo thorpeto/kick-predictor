@@ -2,7 +2,7 @@
 Vereinfaapp = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.1.2"
+    version="3.1.3"
 )Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
@@ -1008,25 +1008,28 @@ async def get_prediction_quality():
         tendency_matches = 0
         
         for row in cursor.fetchall():
-            # Berechne echte Vorhersage basierend auf unserem Algorithmus
+            # Berechne echte Vorhersage basierend auf unserem bewährten Algorithmus
             home_team_id = row[9] or 1
             away_team_id = row[10] or 2
             
-            # Verwende unsere Vorhersage-Logik (vereinfacht)
+            # Verwende IDENTISCHE Vorhersage-Logik wie get_predictions_for_matchday
             try:
-                # Hole Form-Faktoren für beide Teams
+                # Hole Form-Faktoren (basierend auf letzten 14 Spielen)
                 home_form = await get_team_form_from_db(cursor, home_team_id)
                 away_form = await get_team_form_from_db(cursor, away_team_id)
                 
-                # Hole Goals aus letzten 14 Spielen
+                # Hole Goals aus letzten 14 Spielen für xG-ähnliche Berechnung
                 home_goals_last_14 = await get_team_goals_last_n_matches(cursor, home_team_id, 14)
                 away_goals_last_14 = await get_team_goals_last_n_matches(cursor, away_team_id, 14)
                 
-                # Berechne Vorhersage-Wahrscheinlichkeiten
+                # Berechne Vorhersage mit echter Logik (wie in lokaler App)
                 form_diff = home_form - away_form
                 goals_diff = home_goals_last_14 - away_goals_last_14
+                
+                # Heimvorteil (10%)
                 home_advantage = 0.1
                 
+                # Basis-Wahrscheinlichkeiten
                 home_win_prob = 0.45 + (form_diff / 3) + (goals_diff / 20) + home_advantage
                 away_win_prob = 0.35 - (form_diff / 3) - (goals_diff / 20)
                 draw_prob = 0.20
@@ -1037,58 +1040,43 @@ async def get_prediction_quality():
                 away_win_prob = max(0.05, min(0.90, away_win_prob / total))
                 draw_prob = max(0.05, min(0.90, draw_prob / total))
                 
-                # Erneute Normalisierung
+                # Erneute Normalisierung nach Beschränkung
                 total = home_win_prob + draw_prob + away_win_prob
-                prediction = {
-                    "home_win_probability": home_win_prob / total,
-                    "draw_probability": draw_prob / total,
-                    "away_win_probability": away_win_prob / total
-                }
-            except:
-                # Fallback wenn predict_match nicht funktioniert
-                prediction = {
-                    "home_win_probability": 0.4,
-                    "draw_probability": 0.3,
-                    "away_win_probability": 0.3
-                }
+                home_win_prob /= total
+                draw_prob /= total
+                away_win_prob /= total
+                
+                # Vorhersage für Ergebnis basierend auf durchschnittlichen Toren (EXAKT wie Vorhersage-Seite)
+                home_avg_goals = max(0.5, home_goals_last_14 / 14 * home_form * 2)
+                away_avg_goals = max(0.5, away_goals_last_14 / 14 * away_form * 2)
+                
+                predicted_home_goals = round(home_avg_goals)
+                predicted_away_goals = round(away_avg_goals)
+                predicted_score = f"{predicted_home_goals}:{predicted_away_goals}"
+                
+            except Exception as e:
+                print(f"Prediction error for match {row[0]}: {e}")
+                # Fallback wenn die Berechnung fehlschlägt
+                home_win_prob = 0.4
+                draw_prob = 0.3
+                away_win_prob = 0.3
+                predicted_score = "1:1"
             
             # Echtes Ergebnis
             actual_home_goals = row[6]
             actual_away_goals = row[7]
             actual_score = f"{actual_home_goals}:{actual_away_goals}"
             
-            # Vorhersage-Score aus Wahrscheinlichkeiten ableiten
-            home_win_prob = prediction.get("home_win_probability", 0.33)
-            draw_prob = prediction.get("draw_probability", 0.33) 
-            away_win_prob = prediction.get("away_win_probability", 0.33)
+            # Bestimme Tendenz aus vorhergesagtem Score
+            predicted_parts = predicted_score.split(":")
+            predicted_home = int(predicted_parts[0])
+            predicted_away = int(predicted_parts[1])
             
-            # Vorhergesagtes Ergebnis basierend auf Wahrscheinlichkeiten und realistischen Scores
-            if home_win_prob > draw_prob and home_win_prob > away_win_prob:
-                # Home win - variiere die Scores basierend auf Wahrscheinlichkeit
-                if home_win_prob > 0.7:
-                    predicted_score = "3:1"  # Deutlicher Favorit
-                elif home_win_prob > 0.5:
-                    predicted_score = "2:1"  # Leichter Favorit
-                else:
-                    predicted_score = "2:0"  # Knapper Favorit
+            if predicted_home > predicted_away:
                 predicted_tendency = "home_win"
-            elif away_win_prob > draw_prob and away_win_prob > home_win_prob:
-                # Away win - variiere die Scores
-                if away_win_prob > 0.7:
-                    predicted_score = "1:3"  # Deutlicher Favorit
-                elif away_win_prob > 0.5:
-                    predicted_score = "1:2"  # Leichter Favorit
-                else:
-                    predicted_score = "0:2"  # Knapper Favorit
+            elif predicted_away > predicted_home:
                 predicted_tendency = "away_win"
             else:
-                # Draw - variiere die Unentschieden-Scores
-                if draw_prob > 0.4:
-                    predicted_score = "1:1"  # Wahrscheinlichstes Unentschieden
-                elif home_win_prob > away_win_prob:
-                    predicted_score = "2:2"  # Torreicheres Unentschieden, Home leicht stärker
-                else:
-                    predicted_score = "0:0"  # Torloses Unentschieden
                 predicted_tendency = "draw"
             
             # Echte Tendenz
