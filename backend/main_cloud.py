@@ -2,7 +2,7 @@
 Vereinfaapp = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.0.2"
+    version="3.0.3"
 )Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
@@ -43,7 +43,7 @@ def get_db_connection():
 @app.get("/")
 async def root():
     """Root Endpoint"""
-    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.2"}
+    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.3"}
 
 @app.get("/health")
 async def health_check():
@@ -149,10 +149,9 @@ async def get_next_matchday():
         if matches_table_exists:
             # Hole nächsten Spieltag aus matches Tabelle
             cursor.execute("""
-                SELECT DISTINCT m.matchday, m.season 
-                FROM matches m
-                WHERE m.is_finished = 0 OR m.is_finished IS NULL
-                ORDER BY m.season DESC, m.matchday ASC 
+                SELECT DISTINCT matchday, season 
+                FROM matches 
+                ORDER BY season DESC, matchday ASC 
                 LIMIT 1
             """)
             
@@ -168,7 +167,6 @@ async def get_next_matchday():
                         m.matchday,
                         m.season,
                         m.date,
-                        m.is_finished,
                         m.home_goals,
                         m.away_goals,
                         ht.external_id as home_team_id,
@@ -205,7 +203,7 @@ async def get_next_matchday():
                         "date": row["date"],
                         "matchday": row["matchday"],
                         "season": row["season"],
-                        "is_finished": bool(row["is_finished"]),
+                        "is_finished": False,  # Standard für matches ohne is_finished Feld
                         "home_goals": row["home_goals"],
                         "away_goals": row["away_goals"]
                     })
@@ -225,7 +223,6 @@ async def get_next_matchday():
             cursor.execute("""
                 SELECT DISTINCT matchday, season 
                 FROM matches_real 
-                WHERE is_finished = 0 OR is_finished IS NULL
                 ORDER BY season DESC, matchday ASC 
                 LIMIT 1
             """)
