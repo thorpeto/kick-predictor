@@ -647,12 +647,16 @@ async def get_predictions_for_matchday(matchday: int):
                     away_win_prob = prediction_result['away_win_prob']
                     predicted_score = prediction_result['predicted_score']
                     
-                    # Erstelle form_factors aus einzelnen Werten
+                    # ✅ KORRIGIERT: Hole ECHTE Anzahl Tore aus letzten 14 Spielen
+                    home_goals_last_14 = await get_team_goals_last_n_matches(cursor, home_team_id, 14)
+                    away_goals_last_14 = await get_team_goals_last_n_matches(cursor, away_team_id, 14)
+                    
+                    # Erstelle form_factors mit korrigierten Werten
                     form_factors = {
                         "home_form": round(prediction_result['home_form'] * 100, 1),
                         "away_form": round(prediction_result['away_form'] * 100, 1),
-                        "home_goals_last_14": int(prediction_result.get('home_goals_last_14', 14)),
-                        "away_goals_last_14": int(prediction_result.get('away_goals_last_14', 14))
+                        "home_goals_last_14": home_goals_last_14,  # Echte Anzahl Tore
+                        "away_goals_last_14": away_goals_last_14   # Echte Anzahl Tore
                     }
                     
                 except Exception as e:
@@ -665,8 +669,8 @@ async def get_predictions_for_matchday(matchday: int):
                     form_factors = {
                         "home_form": 50.0,
                         "away_form": 50.0,
-                        "home_goals_last_14": 14,
-                        "away_goals_last_14": 14
+                        "home_goals_last_14": 0,  # Fallback auf 0 statt 14
+                        "away_goals_last_14": 0   # Fallback auf 0 statt 14
                     }
                 
                 predictions.append({
@@ -874,8 +878,8 @@ async def get_team_expected_goals(cursor, team_id: int, num_matches: int = 14) -
         print(f"Error calculating xG for team {team_id}: {e}")
         return 1.0
 
-async def get_team_goals_last_n_matches(cursor, team_id: int, n: int = 14) -> float:
-    """Berechnet durchschnittliche Tore pro Spiel aus letzten n Spielen"""
+async def get_team_goals_last_n_matches(cursor, team_id: int, n: int = 14) -> int:
+    """Berechnet GESAMTE Anzahl Tore aus letzten n Spielen (nicht Durchschnitt!)"""
     try:
         cursor.execute("""
             SELECT 
@@ -888,30 +892,33 @@ async def get_team_goals_last_n_matches(cursor, team_id: int, n: int = 14) -> fl
             WHERE (mr.home_team_id = ? OR mr.away_team_id = ?)
                 AND mr.is_finished = 1
                 AND mr.season IN ('2024', '2025')
+                AND mr.home_goals IS NOT NULL 
+                AND mr.away_goals IS NOT NULL
             ORDER BY mr.match_date DESC
             LIMIT ?
         """, (team_id, team_id, n))
         
         matches = cursor.fetchall()
         if not matches:
-            return 10.0  # Fallback-Wert
+            return 0  # Keine Spiele = 0 Tore
             
         total_goals = 0
         for match in matches:
-            is_home = match["home_team_id"] == team_id
-            home_goals = match["home_goals"] or 0
-            away_goals = match["away_goals"] or 0
+            home_team_id = match[0]  # SQLite Row Index
+            away_team_id = match[1]
+            home_goals = match[2] or 0
+            away_goals = match[3] or 0
             
-            if is_home:
+            if home_team_id == team_id:
                 total_goals += home_goals
             else:
                 total_goals += away_goals
         
-        return total_goals
+        return total_goals  # Gesamte Anzahl Tore, nicht Durchschnitt
         
     except Exception as e:
         print(f"Error calculating goals for team {team_id}: {e}")
-        return 10.0
+        return 0  # Fallback auf 0 statt 14
 
 @app.get("/api/team/{team_id}/form")
 async def get_team_form(team_id: int):
