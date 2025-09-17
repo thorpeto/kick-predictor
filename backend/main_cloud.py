@@ -2,7 +2,7 @@
 Vereinfaapp = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.0.3"
+    version="3.0.4"
 )Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
@@ -43,7 +43,7 @@ def get_db_connection():
 @app.get("/")
 async def root():
     """Root Endpoint"""
-    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.3"}
+    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.4"}
 
 @app.get("/health")
 async def health_check():
@@ -142,7 +142,82 @@ async def get_next_matchday():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Prüfe erst, ob matches Tabelle existiert
+        # Prüfe zuerst matches_real Tabelle (hat die aktuellen Daten!)
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches_real'")
+        matches_real_exists = cursor.fetchone() is not None
+        
+        if matches_real_exists:
+            # Hole nächsten Spieltag aus matches_real Tabelle  
+            cursor.execute("""
+                SELECT DISTINCT matchday, season 
+                FROM matches_real 
+                WHERE is_finished = 0 OR is_finished IS NULL
+                ORDER BY season DESC, matchday ASC 
+                LIMIT 1
+            """)
+            
+            matchday_result = cursor.fetchone()
+            if matchday_result:
+                matchday = matchday_result["matchday"]
+                season = matchday_result["season"]
+                
+                # Hole alle Matches für diesen Spieltag mit Team-Details aus matches_real
+                cursor.execute("""
+                    SELECT 
+                        mr.id as match_id,
+                        mr.matchday,
+                        mr.season,
+                        mr.match_date as date,
+                        mr.is_finished,
+                        mr.home_goals,
+                        mr.away_goals,
+                        mr.home_team_id,
+                        mr.home_team_name,
+                        mr.away_team_id,
+                        mr.away_team_name,
+                        tr_home.short_name as home_team_short,
+                        tr_home.icon_url as home_team_logo,
+                        tr_away.short_name as away_team_short,
+                        tr_away.icon_url as away_team_logo
+                    FROM matches_real mr
+                    LEFT JOIN teams_real tr_home ON mr.home_team_id = tr_home.team_id
+                    LEFT JOIN teams_real tr_away ON mr.away_team_id = tr_away.team_id
+                    WHERE mr.matchday = ? AND mr.season = ?
+                    ORDER BY mr.match_date
+                """, (matchday, season))
+                
+                matches = []
+                for row in cursor.fetchall():
+                    matches.append({
+                        "id": row["match_id"],
+                        "home_team": {
+                            "id": row["home_team_id"],
+                            "name": row["home_team_name"],
+                            "short_name": row["home_team_short"] or row["home_team_name"],
+                            "logo_url": row["home_team_logo"]
+                        },
+                        "away_team": {
+                            "id": row["away_team_id"],
+                            "name": row["away_team_name"],
+                            "short_name": row["away_team_short"] or row["away_team_name"],
+                            "logo_url": row["away_team_logo"]
+                        },
+                        "date": row["date"],
+                        "matchday": row["matchday"],
+                        "season": row["season"],
+                        "is_finished": bool(row["is_finished"]) if row["is_finished"] is not None else False,
+                        "home_goals": row["home_goals"],
+                        "away_goals": row["away_goals"]
+                    })
+                
+                conn.close()
+                return {
+                    "matchday": matchday,
+                    "season": season,
+                    "matches": matches
+                }
+        
+        # Fallback: Prüfe ob matches Tabelle existiert
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches'")
         matches_table_exists = cursor.fetchone() is not None
         
