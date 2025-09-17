@@ -27,6 +27,8 @@ interface Match {
 interface FormFactor {
   home_form: number;
   away_form: number;
+  home_goals_last_14: number;
+  away_goals_last_14: number;
   home_xg_last_6: number;
   away_xg_last_6: number;
 }
@@ -185,7 +187,17 @@ const PredictionsPage = () => {
               <div className="mb-4">
                 <h3 className="text-center mb-2">Wahrscheinlichkeiten</h3>
                 <div className="h-64">
-                  <Pie data={getPieChartData(prediction)} options={{ maintainAspectRatio: false }} />
+                  <Pie 
+                  data={getPieChartData(prediction)} 
+                  options={{ 
+                    maintainAspectRatio: false,
+                    plugins: {
+                    legend: {
+                      position: 'bottom' as const
+                    }
+                    }
+                  }} 
+                  />
                 </div>
               </div>
               
