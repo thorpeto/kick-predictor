@@ -80,7 +80,7 @@ const getApiBase = (): string => {
   // 3. Google Cloud Run deployment
   if (window.location.hostname.includes('run.app')) {
     console.log('Using Google Cloud Run backend URL');
-    return 'https://kick-predictor-backend-868983551460.europe-west1.run.app';
+    return 'https://kick-predictor-backend-nbdweu6ika-ew.a.run.app';
   }
   
   // 4. Render.com Deployment - direkte Backend-URL verwenden

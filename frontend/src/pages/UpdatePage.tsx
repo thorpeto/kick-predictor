@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { buildApiUrl } from '../services/api';
 
+// Verwende die zentrale API-Konfiguration
 const getApiBaseUrl = () => {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:8000';
   }
   if (window.location.hostname.includes('onrender.com')) {
     return 'https://kick-predictor-backend.onrender.com';
+  }
+  // Für GCP Cloud Run: Backend Service URL
+  if (window.location.hostname.includes('run.app')) {
+    return 'https://kick-predictor-backend-nbdweu6ika-ew.a.run.app';
   }
   return window.location.origin;
 };
@@ -50,8 +56,9 @@ const UpdatePage: React.FC = () => {
 
   const fetchMatchdayInfo = async () => {
     try {
-      const apiBaseUrl = getApiBaseUrl();
-      const response = await axios.get(`${apiBaseUrl}/api/next-matchday-info`);
+      const url = buildApiUrl('/next-matchday-info');
+      console.log('Fetching matchday info from:', url);
+      const response = await axios.get(url);
       
       // Prüfe ob die Response JSON ist
       if (typeof response.data === 'string' || !response.data || typeof response.data !== 'object') {
@@ -90,8 +97,8 @@ const UpdatePage: React.FC = () => {
 
   const fetchAutoUpdaterStatus = async () => {
     try {
-      const apiBaseUrl = getApiBaseUrl();
-      const response = await axios.get(`${apiBaseUrl}/api/auto-updater/status`);
+      const url = buildApiUrl('/auto-updater/status');
+      const response = await axios.get(url);
       
       // Prüfe ob die Response JSON ist
       if (typeof response.data === 'string' || !response.data || typeof response.data !== 'object') {
@@ -113,8 +120,8 @@ const UpdatePage: React.FC = () => {
     setUpdateMessage('Update wird durchgeführt...');
     
     try {
-      const apiBaseUrl = getApiBaseUrl();
-      const response = await axios.post(`${apiBaseUrl}/api/update-data`);
+      const url = buildApiUrl('/update-data');
+      const response = await axios.post(url);
       const result = response.data;
       
       setUpdateMessage(`✅ ${result.message}`);
@@ -143,8 +150,8 @@ const UpdatePage: React.FC = () => {
 
   const toggleAutoUpdater = async (action: 'start' | 'stop') => {
     try {
-      const apiBaseUrl = getApiBaseUrl();
-      const response = await axios.post(`${apiBaseUrl}/api/auto-updater/${action}`);
+      const url = buildApiUrl(`/auto-updater/${action}`);
+      const response = await axios.post(url);
       const result = response.data;
       
       setUpdateMessage(`✅ ${result.message}`);
@@ -161,13 +168,24 @@ const UpdatePage: React.FC = () => {
   useEffect(() => {
     fetchMatchdayInfo();
     
-    const interval = setInterval(() => {
+    // Timer für regelmäßige Updates (alle 30 Sekunden für Status, alle 5 Minuten für Daten)
+    const statusInterval = setInterval(() => {
       fetchAutoUpdaterStatus();
       setLastRefresh(new Date());
-    }, 30000);
+    }, 30000); // 30 Sekunden
     
-    return () => clearInterval(interval);
-  }, []);
+    const dataInterval = setInterval(() => {
+      if (matchdayInfo?.is_game_weekend) {
+        // Wenn Spielwochenende, öfter aktualisieren
+        fetchMatchdayInfo();
+      }
+    }, 5 * 60 * 1000); // 5 Minuten
+    
+    return () => {
+      clearInterval(statusInterval);
+      clearInterval(dataInterval);
+    };
+  }, [matchdayInfo?.is_game_weekend]);
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString('de-DE', {
@@ -182,6 +200,10 @@ const UpdatePage: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
           <span className="mr-3">🔄</span>
           Daten-Management
+          <span className="ml-auto flex items-center text-sm text-gray-500">
+            <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+            Live (aktualisiert alle 30s)
+          </span>
         </h1>
         
         {autoUpdaterStatus && (
@@ -203,10 +225,20 @@ const UpdatePage: React.FC = () => {
                   <span className="font-medium">
                     {autoUpdaterStatus.is_running ? 'Aktiv' : 'Gestoppt'}
                   </span>
+                  {matchdayInfo?.is_game_weekend && (
+                    <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                      Spielwochenende
+                    </span>
+                  )}
                 </div>
                 {autoUpdaterStatus.is_running && (
                   <div className="text-sm text-gray-600">
-                    <p>Spieltag-Zeit: {autoUpdaterStatus.is_gameday_time ? '✅ Ja' : '❌ Nein'}</p>
+                    <p className="flex items-center">
+                      <span className={`w-2 h-2 rounded-full mr-2 ${
+                        autoUpdaterStatus.is_gameday_time ? 'bg-orange-500' : 'bg-gray-400'
+                      }`}></span>
+                      Spieltag-Zeit: {autoUpdaterStatus.is_gameday_time ? '✅ Ja' : '❌ Nein'}
+                    </p>
                     <p>Updates durchgeführt: {autoUpdaterStatus.update_count}</p>
                     {autoUpdaterStatus.last_update && (
                       <p>Letztes Update: {formatTime(autoUpdaterStatus.last_update)}</p>
