@@ -12,7 +12,7 @@ const getApiBaseUrl = () => {
   }
   // Für GCP Cloud Run: Backend Service URL
   if (window.location.hostname.includes('run.app')) {
-    return 'https://kick-predictor-backend-nbdweu6ika-ew.a.run.app';
+    return 'https://kick-predictor-backend-868983551460.europe-west1.run.app';
   }
   return window.location.origin;
 };
