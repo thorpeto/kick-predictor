@@ -148,7 +148,13 @@ export const fetchNextMatchday = async (): Promise<Match[]> => {
     console.log('Fetching next matchday from:', url);
     const response = await axios.get(url)
     console.log('Next matchday response:', response.data);
-    return response.data
+    
+    // Backend gibt jetzt { matchday, season, matches } zurück
+    if (response.data && response.data.matches) {
+      return response.data.matches;
+    }
+    
+    return [];
   } catch (error) {
     console.error('Fehler beim Abrufen des nächsten Spieltags:', error)
     if (axios.isAxiosError(error)) {
@@ -165,9 +171,22 @@ export const fetchNextMatchday = async (): Promise<Match[]> => {
 
 export const fetchUpcomingMatches = async (): Promise<{ matches: Match[], matchday: number }> => {
   try {
-    // Fallback: Da Backend keine komplexen Match-Strukturen hat, geben wir Mock-Daten zurück
-    console.log('fetchUpcomingMatches: Backend has simplified structure, returning empty matches');
-    return { matches: [], matchday: 1 };
+    const url = buildApiUrl('/next-matchday');
+    console.log('Fetching upcoming matches from:', url);
+    const response = await axios.get(url)
+    console.log('Next matchday response:', response.data);
+    
+    // Backend gibt jetzt das erwartete Format zurück: { matchday, season, matches }
+    if (response.data && response.data.matches) {
+      return {
+        matches: response.data.matches,
+        matchday: response.data.matchday || 1
+      };
+    }
+    
+    // Fallback falls keine Matches
+    console.log('No matches found in response, returning empty');
+    return { matches: [], matchday: response.data.matchday || 1 };
   } catch (error) {
     console.error('Fehler beim Abrufen der kommenden Spiele:', error);
     return { matches: [], matchday: 1 };

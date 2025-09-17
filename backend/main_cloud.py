@@ -1,5 +1,9 @@
 """
-Vereinfachte Backend Version für Cloud Run Deployment - Master DB Schema
+Vereinfaapp = FastAPI(
+    title="Kick Predictor API - Cloud Edition",
+    description="API mit echten Bundesliga-Daten - Master DB Schema",
+    version="3.0.2"
+)Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
 import sqlite3
@@ -39,7 +43,7 @@ def get_db_connection():
 @app.get("/")
 async def root():
     """Root Endpoint"""
-    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.0"}
+    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.2"}
 
 @app.get("/health")
 async def health_check():
@@ -133,26 +137,217 @@ async def get_table():
 
 @app.get("/api/next-matchday")
 async def get_next_matchday():
-    """Nächster Spieltag"""
+    """Nächster Spieltag mit Matches für Frontend Homepage"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("""
-            SELECT DISTINCT matchday, season 
-            FROM matches 
-            ORDER BY season DESC, matchday ASC 
-            LIMIT 1
-        """)
+        # Prüfe erst, ob matches Tabelle existiert
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches'")
+        matches_table_exists = cursor.fetchone() is not None
         
-        result = cursor.fetchone()
-        if result:
-            return {"matchday": result["matchday"], "season": result["season"]}
-        else:
-            return {"matchday": 1, "season": "2025"}
+        if matches_table_exists:
+            # Hole nächsten Spieltag aus matches Tabelle
+            cursor.execute("""
+                SELECT DISTINCT m.matchday, m.season 
+                FROM matches m
+                WHERE m.is_finished = 0 OR m.is_finished IS NULL
+                ORDER BY m.season DESC, m.matchday ASC 
+                LIMIT 1
+            """)
+            
+            matchday_result = cursor.fetchone()
+            if matchday_result:
+                matchday = matchday_result["matchday"]
+                season = matchday_result["season"]
+                
+                # Hole alle Matches für diesen Spieltag mit Team-Details
+                cursor.execute("""
+                    SELECT 
+                        m.id as match_id,
+                        m.matchday,
+                        m.season,
+                        m.date,
+                        m.is_finished,
+                        m.home_goals,
+                        m.away_goals,
+                        ht.external_id as home_team_id,
+                        ht.name as home_team_name,
+                        ht.short_name as home_team_short,
+                        ht.logo_url as home_team_logo,
+                        at.external_id as away_team_id,
+                        at.name as away_team_name,
+                        at.short_name as away_team_short,
+                        at.logo_url as away_team_logo
+                    FROM matches m
+                    JOIN teams ht ON m.home_team_id = ht.id
+                    JOIN teams at ON m.away_team_id = at.id
+                    WHERE m.matchday = ? AND m.season = ?
+                    ORDER BY m.date
+                """, (matchday, season))
+                
+                matches = []
+                for row in cursor.fetchall():
+                    matches.append({
+                        "id": row["match_id"],
+                        "home_team": {
+                            "id": row["home_team_id"],
+                            "name": row["home_team_name"],
+                            "short_name": row["home_team_short"],
+                            "logo_url": row["home_team_logo"]
+                        },
+                        "away_team": {
+                            "id": row["away_team_id"],
+                            "name": row["away_team_name"],
+                            "short_name": row["away_team_short"],
+                            "logo_url": row["away_team_logo"]
+                        },
+                        "date": row["date"],
+                        "matchday": row["matchday"],
+                        "season": row["season"],
+                        "is_finished": bool(row["is_finished"]),
+                        "home_goals": row["home_goals"],
+                        "away_goals": row["away_goals"]
+                    })
+                
+                conn.close()
+                return {
+                    "matchday": matchday,
+                    "season": season,
+                    "matches": matches
+                }
+        
+        # Fallback: Verwende matches_real Tabelle falls vorhanden
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches_real'")
+        matches_real_exists = cursor.fetchone() is not None
+        
+        if matches_real_exists:
+            cursor.execute("""
+                SELECT DISTINCT matchday, season 
+                FROM matches_real 
+                WHERE is_finished = 0 OR is_finished IS NULL
+                ORDER BY season DESC, matchday ASC 
+                LIMIT 1
+            """)
+            
+            matchday_result = cursor.fetchone()
+            if matchday_result:
+                matchday = matchday_result["matchday"]
+                season = matchday_result["season"]
+                
+                # Hole Matches mit Team-Details aus matches_real und teams_real
+                cursor.execute("""
+                    SELECT 
+                        mr.match_id,
+                        mr.matchday,
+                        mr.season,
+                        mr.match_date,
+                        mr.is_finished,
+                        mr.home_goals,
+                        mr.away_goals,
+                        mr.home_team_id,
+                        mr.home_team_name,
+                        mr.away_team_id,
+                        mr.away_team_name,
+                        ht.short_name as home_team_short,
+                        ht.icon_url as home_team_logo,
+                        at.short_name as away_team_short,
+                        at.icon_url as away_team_logo
+                    FROM matches_real mr
+                    LEFT JOIN teams_real ht ON mr.home_team_id = ht.team_id
+                    LEFT JOIN teams_real at ON mr.away_team_id = at.team_id
+                    WHERE mr.matchday = ? AND mr.season = ?
+                    ORDER BY mr.match_date
+                """, (matchday, season))
+                
+                matches = []
+                for row in cursor.fetchall():
+                    matches.append({
+                        "id": row["match_id"],
+                        "home_team": {
+                            "id": row["home_team_id"],
+                            "name": row["home_team_name"],
+                            "short_name": row["home_team_short"] or row["home_team_name"][:3],
+                            "logo_url": row["home_team_logo"] or ""
+                        },
+                        "away_team": {
+                            "id": row["away_team_id"],
+                            "name": row["away_team_name"],
+                            "short_name": row["away_team_short"] or row["away_team_name"][:3],
+                            "logo_url": row["away_team_logo"] or ""
+                        },
+                        "date": row["match_date"],
+                        "matchday": row["matchday"],
+                        "season": row["season"],
+                        "is_finished": bool(row["is_finished"]),
+                        "home_goals": row["home_goals"],
+                        "away_goals": row["away_goals"]
+                    })
+                
+                conn.close()
+                return {
+                    "matchday": matchday,
+                    "season": season,
+                    "matches": matches
+                }
+        
+        # Fallback: Generiere Dummy-Matches basierend auf Teams
+        cursor.execute("""
+            SELECT external_id, name, short_name, logo_url
+            FROM teams 
+            ORDER BY name
+            LIMIT 18
+        """)
+        teams = cursor.fetchall()
+        
+        if len(teams) >= 2:
+            matches = []
+            # Erstelle einige Dummy-Matches
+            for i in range(0, min(len(teams)-1, 8), 2):
+                if i+1 < len(teams):
+                    matches.append({
+                        "id": i+1,
+                        "home_team": {
+                            "id": teams[i]["external_id"],
+                            "name": teams[i]["name"],
+                            "short_name": teams[i]["short_name"],
+                            "logo_url": teams[i]["logo_url"]
+                        },
+                        "away_team": {
+                            "id": teams[i+1]["external_id"],
+                            "name": teams[i+1]["name"],
+                            "short_name": teams[i+1]["short_name"],
+                            "logo_url": teams[i+1]["logo_url"]
+                        },
+                        "date": "2025-09-21T15:30:00Z",
+                        "matchday": 1,
+                        "season": "2025",
+                        "is_finished": False,
+                        "home_goals": None,
+                        "away_goals": None
+                    })
+            
+            conn.close()
+            return {
+                "matchday": 1,
+                "season": "2025",
+                "matches": matches
+            }
+        
+        conn.close()
+        return {
+            "matchday": 1,
+            "season": "2025",
+            "matches": []
+        }
             
     except Exception as e:
-        return {"matchday": 1, "season": "2025"}
+        return {
+            "matchday": 1,
+            "season": "2025",
+            "matches": [],
+            "error": str(e)
+        }
 
 @app.get("/api/matchday-info")
 async def get_matchday_info():
