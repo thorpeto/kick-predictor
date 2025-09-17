@@ -2,7 +2,7 @@
 Vereinfaapp = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.1.0"
+    version="3.1.1"
 )Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
@@ -981,7 +981,7 @@ async def get_prediction_quality():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Hole alle beendeten Spiele aus matches_real mit Team-Details
+        # Hole die letzten 100 beendeten Spiele chronologisch
         cursor.execute("""
             SELECT 
                 m.id,
@@ -999,7 +999,7 @@ async def get_prediction_quality():
             LEFT JOIN teams_real ht ON m.home_team_name = ht.name
             LEFT JOIN teams_real at ON m.away_team_name = at.name
             WHERE m.is_finished = 1
-            ORDER BY m.season, m.matchday, m.match_date
+            ORDER BY m.season DESC, m.matchday DESC, m.match_date DESC
             LIMIT 100
         """)
         
