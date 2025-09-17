@@ -17,7 +17,7 @@ import json
 app = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.0.1"
+    version="3.3.0"
 )
 
 # CORS-Einstellungen
@@ -43,7 +43,7 @@ def get_db_connection():
 @app.get("/")
 async def root():
     """Root Endpoint"""
-    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.8"}
+    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.3.0", "features": ["Unified xG Prediction Model", "Real Data Analysis", "Expected Goals", "Form-based Calculations"]}
 
 @app.get("/health")
 async def health_check():
@@ -647,49 +647,41 @@ async def get_predictions_for_matchday(matchday: int):
             
             predictions = []
             for row in cursor.fetchall():
-                # Berechne echte Vorhersagen basierend auf letzten 14 Spielen
+                # ✅ VERWENDE DAS EINHEITLICHE xG-VORHERSAGEMODELL ✅
                 home_team_id = row["home_team_id"]
                 away_team_id = row["away_team_id"]
                 
-                # Hole Form-Faktoren (basierend auf letzten 14 Spielen)
-                home_form = await get_team_form_from_db(cursor, home_team_id)
-                away_form = await get_team_form_from_db(cursor, away_team_id)
-                
-                # Hole Goals aus letzten 14 Spielen für xG-ähnliche Berechnung
-                home_goals_last_14 = await get_team_goals_last_n_matches(cursor, home_team_id, 14)
-                away_goals_last_14 = await get_team_goals_last_n_matches(cursor, away_team_id, 14)
-                
-                # Berechne Vorhersage mit echter Logik (wie in lokaler App)
-                form_diff = home_form - away_form
-                goals_diff = home_goals_last_14 - away_goals_last_14
-                
-                # Heimvorteil (10%)
-                home_advantage = 0.1
-                
-                # Basis-Wahrscheinlichkeiten
-                home_win_prob = 0.45 + (form_diff / 3) + (goals_diff / 20) + home_advantage
-                away_win_prob = 0.35 - (form_diff / 3) - (goals_diff / 20)
-                draw_prob = 0.20
-                
-                # Normalisierung
-                total = home_win_prob + draw_prob + away_win_prob
-                home_win_prob = max(0.05, min(0.90, home_win_prob / total))
-                away_win_prob = max(0.05, min(0.90, away_win_prob / total))
-                draw_prob = max(0.05, min(0.90, draw_prob / total))
-                
-                # Erneute Normalisierung nach Beschränkung
-                total = home_win_prob + draw_prob + away_win_prob
-                home_win_prob /= total
-                draw_prob /= total
-                away_win_prob /= total
-                
-                # Vorhersage für Ergebnis basierend auf durchschnittlichen Toren
-                home_avg_goals = max(0.5, home_goals_last_14 / 14 * home_form * 2)
-                away_avg_goals = max(0.5, away_goals_last_14 / 14 * away_form * 2)
-                
-                predicted_home_goals = round(home_avg_goals)
-                predicted_away_goals = round(away_avg_goals)
-                predicted_score = f"{predicted_home_goals}:{predicted_away_goals}"
+                try:
+                    # Berechne Vorhersage mit einheitlichem xG-Modell
+                    prediction_result = await predict_match_xg(cursor, home_team_id, away_team_id)
+                    
+                    # Extrahiere Werte aus xG-Modell
+                    home_win_prob = prediction_result['home_win_prob']
+                    draw_prob = prediction_result['draw_prob']
+                    away_win_prob = prediction_result['away_win_prob']
+                    predicted_score = prediction_result['predicted_score']
+                    
+                    # Erstelle form_factors aus einzelnen Werten
+                    form_factors = {
+                        "home_form": round(prediction_result['home_form'] * 100, 1),
+                        "away_form": round(prediction_result['away_form'] * 100, 1),
+                        "home_goals_last_14": int(prediction_result.get('home_goals_last_14', 14)),
+                        "away_goals_last_14": int(prediction_result.get('away_goals_last_14', 14))
+                    }
+                    
+                except Exception as e:
+                    print(f"xG prediction error for match {row['match_id']}: {e}")
+                    # Fallback bei Fehlern
+                    home_win_prob = 0.4
+                    draw_prob = 0.3
+                    away_win_prob = 0.3
+                    predicted_score = "1:1"
+                    form_factors = {
+                        "home_form": 50.0,
+                        "away_form": 50.0,
+                        "home_goals_last_14": 14,
+                        "away_goals_last_14": 14
+                    }
                 
                 predictions.append({
                     "match": {
@@ -714,12 +706,7 @@ async def get_predictions_for_matchday(matchday: int):
                     "draw_prob": round(draw_prob, 3),
                     "away_win_prob": round(away_win_prob, 3),
                     "predicted_score": predicted_score,
-                    "form_factors": {
-                        "home_form": round(home_form * 100, 1),
-                        "away_form": round(away_form * 100, 1),
-                        "home_goals_last_14": int(home_goals_last_14),
-                        "away_goals_last_14": int(away_goals_last_14)
-                    }
+                    "form_factors": form_factors
                 })
             
             conn.close()
@@ -732,6 +719,8 @@ async def get_predictions_for_matchday(matchday: int):
     except Exception as e:
         print(f"Error in get_predictions_for_matchday: {str(e)}")
         return []
+
+# ===== EINHEITLICHES VORHERSAGEMODELL MIT xG =====
 
 async def get_team_form_from_db(cursor, team_id: int) -> float:
     """Berechnet Team-Form basierend auf letzten 14 Spielen (über 2024 und 2025)"""
@@ -758,9 +747,12 @@ async def get_team_form_from_db(cursor, team_id: int) -> float:
             
         total_points = 0
         for match in matches:
-            is_home = match["home_team_id"] == team_id
-            home_goals = match["home_goals"] or 0
-            away_goals = match["away_goals"] or 0
+            home_team_id = match[0]  # SQLite Row Index
+            away_team_id = match[1]
+            home_goals = match[2] or 0
+            away_goals = match[3] or 0
+            
+            is_home = home_team_id == team_id
             
             if is_home:
                 if home_goals > away_goals:
@@ -784,6 +776,117 @@ async def get_team_form_from_db(cursor, team_id: int) -> float:
     except Exception as e:
         print(f"Error calculating team form for team {team_id}: {e}")
         return 0.5
+
+async def predict_match_xg(cursor, home_team_id: int, away_team_id: int) -> dict:
+    """EINHEITLICHES Expected Goals Vorhersagemodell für beide Seiten (Vorhersage + Qualität)"""
+    try:
+        # 1. Hole Form-Faktoren (basierend auf letzten 14 Spielen)
+        home_form = await get_team_form_from_db(cursor, home_team_id)
+        away_form = await get_team_form_from_db(cursor, away_team_id)
+        
+        # 2. Hole Expected Goals aus letzten 14 Spielen für xG-Berechnung
+        home_xg = await get_team_expected_goals(cursor, home_team_id, 14)
+        away_xg = await get_team_expected_goals(cursor, away_team_id, 14)
+        
+        # 3. Form-adjustierte Expected Goals (bessere Form = höhere xG)
+        home_form_adjusted_xg = home_xg * (0.7 + home_form * 0.6)  # 0.7-1.3 Multiplikator
+        away_form_adjusted_xg = away_xg * (0.7 + away_form * 0.6)
+        
+        # 4. Heimvorteil (10% xG-Boost für Heimteam)
+        home_advantage = 0.1
+        home_final_xg = home_form_adjusted_xg * (1 + home_advantage)
+        away_final_xg = away_form_adjusted_xg
+        
+        # 5. Wahrscheinlichkeiten basierend auf xG-Differenz
+        xg_diff = home_final_xg - away_final_xg
+        
+        # Basis-Wahrscheinlichkeiten mit xG-Adjustierung
+        home_win_prob = 0.45 + (xg_diff / 4) + (home_form - away_form) / 4
+        away_win_prob = 0.35 - (xg_diff / 4) - (home_form - away_form) / 4
+        draw_prob = 0.20
+        
+        # 6. Normalisierung und Beschränkung
+        home_win_prob = max(0.05, min(0.90, home_win_prob))
+        away_win_prob = max(0.05, min(0.90, away_win_prob))
+        draw_prob = max(0.05, min(0.90, draw_prob))
+        
+        total = home_win_prob + draw_prob + away_win_prob
+        home_win_prob /= total
+        draw_prob /= total
+        away_win_prob /= total
+        
+        # 7. Score-Vorhersage basierend auf Expected Goals
+        predicted_home_goals = max(0, round(home_final_xg))
+        predicted_away_goals = max(0, round(away_final_xg))
+        
+        return {
+            'predicted_home_goals': predicted_home_goals,
+            'predicted_away_goals': predicted_away_goals,
+            'predicted_score': f"{predicted_home_goals}:{predicted_away_goals}",
+            'home_win_prob': home_win_prob,
+            'draw_prob': draw_prob,
+            'away_win_prob': away_win_prob,
+            'home_xg': home_final_xg,
+            'away_xg': away_final_xg,
+            'home_form': home_form,
+            'away_form': away_form
+        }
+        
+    except Exception as e:
+        print(f"xG prediction error for teams {home_team_id} vs {away_team_id}: {e}")
+        return {
+            'predicted_home_goals': 1,
+            'predicted_away_goals': 1,
+            'predicted_score': "1:1",
+            'home_win_prob': 0.4,
+            'draw_prob': 0.3,
+            'away_win_prob': 0.3,
+            'home_xg': 1.0,
+            'away_xg': 1.0,
+            'home_form': 0.5,
+            'away_form': 0.5
+        }
+
+async def get_team_expected_goals(cursor, team_id: int, num_matches: int = 14) -> float:
+    """Berechnet Expected Goals basierend auf echten Toren der letzten N Spiele"""
+    try:
+        cursor.execute("""
+            SELECT 
+                mr.home_team_id,
+                mr.away_team_id,
+                mr.home_goals,
+                mr.away_goals
+            FROM matches_real mr
+            WHERE (mr.home_team_id = ? OR mr.away_team_id = ?)
+                AND mr.is_finished = 1
+                AND mr.season IN ('2024', '2025')
+            ORDER BY mr.match_date DESC
+            LIMIT ?
+        """, (team_id, team_id, num_matches))
+        
+        matches = cursor.fetchall()
+        if not matches:
+            return 1.0  # Standard xG wenn keine Daten
+            
+        total_goals = 0
+        for match in matches:
+            home_team_id = match[0]
+            away_team_id = match[1]
+            home_goals = match[2] or 0
+            away_goals = match[3] or 0
+            
+            if home_team_id == team_id:
+                total_goals += home_goals
+            else:
+                total_goals += away_goals
+        
+        # Expected Goals als Durchschnitt pro Spiel
+        avg_goals = total_goals / len(matches) if matches else 1.0
+        return max(0.5, avg_goals)  # Mindestens 0.5 xG pro Spiel
+        
+    except Exception as e:
+        print(f"Error calculating xG for team {team_id}: {e}")
+        return 1.0
 
 async def get_team_goals_last_n_matches(cursor, team_id: int, n: int = 14) -> float:
     """Berechnet durchschnittliche Tore pro Spiel aus letzten n Spielen"""
@@ -992,12 +1095,10 @@ async def get_prediction_quality():
                 m.away_team_name,
                 m.home_goals,
                 m.away_goals,
-                m.match_date,
-                ht.id as home_team_id,
-                at.id as away_team_id
+                m.home_team_id,
+                m.away_team_id,
+                m.match_date
             FROM matches_real m
-            LEFT JOIN teams_real ht ON m.home_team_name = ht.name
-            LEFT JOIN teams_real at ON m.away_team_name = at.name
             WHERE m.is_finished = 1
             ORDER BY m.season DESC, m.matchday DESC, m.match_date DESC
             LIMIT 100
@@ -1008,54 +1109,23 @@ async def get_prediction_quality():
         tendency_matches = 0
         
         for row in cursor.fetchall():
-            # Berechne echte Vorhersage basierend auf unserem bewährten Algorithmus
-            home_team_id = row[9] or 1
-            away_team_id = row[10] or 2
+            # Verwende die echten Team-IDs aus matches_real
+            home_team_id = row[8]  # m.home_team_id
+            away_team_id = row[9]  # m.away_team_id
             
-            # Verwende IDENTISCHE Vorhersage-Logik wie get_predictions_for_matchday
+            # ✅ VERWENDE DAS EINHEITLICHE xG-VORHERSAGEMODELL ✅
             try:
-                # Hole Form-Faktoren (basierend auf letzten 14 Spielen)
-                home_form = await get_team_form_from_db(cursor, home_team_id)
-                away_form = await get_team_form_from_db(cursor, away_team_id)
+                # Berechne Vorhersage mit einheitlichem xG-Modell
+                prediction_result = await predict_match_xg(cursor, home_team_id, away_team_id)
                 
-                # Hole Goals aus letzten 14 Spielen für xG-ähnliche Berechnung
-                home_goals_last_14 = await get_team_goals_last_n_matches(cursor, home_team_id, 14)
-                away_goals_last_14 = await get_team_goals_last_n_matches(cursor, away_team_id, 14)
-                
-                # Berechne Vorhersage mit echter Logik (wie in lokaler App)
-                form_diff = home_form - away_form
-                goals_diff = home_goals_last_14 - away_goals_last_14
-                
-                # Heimvorteil (10%)
-                home_advantage = 0.1
-                
-                # Basis-Wahrscheinlichkeiten
-                home_win_prob = 0.45 + (form_diff / 3) + (goals_diff / 20) + home_advantage
-                away_win_prob = 0.35 - (form_diff / 3) - (goals_diff / 20)
-                draw_prob = 0.20
-                
-                # Normalisierung
-                total = home_win_prob + draw_prob + away_win_prob
-                home_win_prob = max(0.05, min(0.90, home_win_prob / total))
-                away_win_prob = max(0.05, min(0.90, away_win_prob / total))
-                draw_prob = max(0.05, min(0.90, draw_prob / total))
-                
-                # Erneute Normalisierung nach Beschränkung
-                total = home_win_prob + draw_prob + away_win_prob
-                home_win_prob /= total
-                draw_prob /= total
-                away_win_prob /= total
-                
-                # Vorhersage für Ergebnis basierend auf durchschnittlichen Toren (EXAKT wie Vorhersage-Seite)
-                home_avg_goals = max(0.5, home_goals_last_14 / 14 * home_form * 2)
-                away_avg_goals = max(0.5, away_goals_last_14 / 14 * away_form * 2)
-                
-                predicted_home_goals = round(home_avg_goals)
-                predicted_away_goals = round(away_avg_goals)
-                predicted_score = f"{predicted_home_goals}:{predicted_away_goals}"
+                # Extrahiere Werte aus xG-Modell
+                home_win_prob = prediction_result['home_win_prob']
+                draw_prob = prediction_result['draw_prob'] 
+                away_win_prob = prediction_result['away_win_prob']
+                predicted_score = prediction_result['predicted_score']
                 
             except Exception as e:
-                print(f"Prediction error for match {row[0]}: {e}")
+                print(f"xG Prediction error for match {row[0]}: {e}")
                 # Fallback wenn die Berechnung fehlschlägt
                 home_win_prob = 0.4
                 draw_prob = 0.3
@@ -1114,7 +1184,7 @@ async def get_prediction_quality():
                         "name": row[5],
                         "short_name": row[5][:10]
                     },
-                    "date": row[8],
+                    "date": row[10],
                     "matchday": row[3],
                     "season": row[2]
                 },
