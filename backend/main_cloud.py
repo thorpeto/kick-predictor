@@ -2,7 +2,7 @@
 Vereinfaapp = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.0.7"
+    version="3.0.8"
 )Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
@@ -43,7 +43,7 @@ def get_db_connection():
 @app.get("/")
 async def root():
     """Root Endpoint"""
-    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.7"}
+    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.8"}
 
 @app.get("/health")
 async def health_check():
@@ -94,46 +94,151 @@ async def get_teams():
 
 @app.get("/api/table")
 async def get_table():
-    """Aktuelle Bundesliga-Tabelle"""
+    """Aktuelle Bundesliga-Tabelle basierend auf echten Ergebnissen - wie lokale App"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Einfache Tabelle ohne Match-Statistiken (da lokale matches Tabelle evtl. keine Tore hat)
-        cursor.execute("""
-            SELECT 
-                name,
-                logo_url,
-                short_name,
-                external_id
-            FROM teams
-            ORDER BY name
-        """)
+        # Prüfe zuerst matches_real Tabelle (hat die echten Ergebnisse)
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches_real'")
+        matches_real_exists = cursor.fetchone() is not None
         
-        table = []
-        position = 1
-        for row in cursor.fetchall():
-            table.append({
-                "position": position,
-                "team_name": row["name"],
-                "team_icon_url": row["logo_url"],
-                "shortname": row["short_name"],
-                "games": 0,
-                "wins": 0,
-                "draws": 0, 
-                "losses": 0,
-                "goals_for": 0,
-                "goals_against": 0,
-                "goal_difference": 0,
-                "points": 0
-            })
-            position += 1
+        if matches_real_exists:
+            # Initialisiere Team-Statistiken Dictionary
+            team_stats = {}
             
+            # Hole alle Teams aus teams_real
+            cursor.execute("""
+                SELECT DISTINCT team_id, name, short_name, icon_url
+                FROM teams_real
+                ORDER BY name
+            """)
+            
+            teams = cursor.fetchall()
+            for team in teams:
+                team_stats[team["team_id"]] = {
+                    "team_id": team["team_id"],
+                    "team_name": team["name"],
+                    "shortname": team["short_name"],
+                    "team_icon_url": team["icon_url"],
+                    "games": 0,
+                    "wins": 0,
+                    "draws": 0,
+                    "losses": 0,
+                    "goals_for": 0,
+                    "goals_against": 0,
+                    "points": 0
+                }
+            
+            # Verarbeite alle abgeschlossenen Spiele der Saison 2025
+            cursor.execute("""
+                SELECT 
+                    home_team_id,
+                    away_team_id,
+                    home_goals,
+                    away_goals,
+                    is_finished
+                FROM matches_real
+                WHERE season = '2025' AND is_finished = 1
+                    AND home_goals IS NOT NULL AND away_goals IS NOT NULL
+            """)
+            
+            matches = cursor.fetchall()
+            for match in matches:
+                home_id = match["home_team_id"]
+                away_id = match["away_team_id"]
+                home_goals = match["home_goals"]
+                away_goals = match["away_goals"]
+                
+                # Stelle sicher, dass beide Teams existieren
+                if home_id not in team_stats or away_id not in team_stats:
+                    continue
+                
+                # Aktualisiere Spiele-Anzahl
+                team_stats[home_id]["games"] += 1
+                team_stats[away_id]["games"] += 1
+                
+                # Aktualisiere Tore
+                team_stats[home_id]["goals_for"] += home_goals
+                team_stats[home_id]["goals_against"] += away_goals
+                team_stats[away_id]["goals_for"] += away_goals
+                team_stats[away_id]["goals_against"] += home_goals
+                
+                # Bestimme Ergebnis und vergebe Punkte
+                if home_goals > away_goals:  # Heimsieg
+                    team_stats[home_id]["wins"] += 1
+                    team_stats[home_id]["points"] += 3
+                    team_stats[away_id]["losses"] += 1
+                elif home_goals < away_goals:  # Auswärtssieg
+                    team_stats[away_id]["wins"] += 1
+                    team_stats[away_id]["points"] += 3
+                    team_stats[home_id]["losses"] += 1
+                else:  # Unentschieden
+                    team_stats[home_id]["draws"] += 1
+                    team_stats[home_id]["points"] += 1
+                    team_stats[away_id]["draws"] += 1
+                    team_stats[away_id]["points"] += 1
+            
+            # Berechne Tordifferenz und erstelle finale Tabelle
+            table = []
+            for team_id, stats in team_stats.items():
+                stats["goal_difference"] = stats["goals_for"] - stats["goals_against"]
+                table.append(stats)
+            
+            # Sortiere nach Bundesliga-Regeln: 1. Punkte, 2. Tordifferenz, 3. Tore
+            table.sort(key=lambda x: (-x["points"], -x["goal_difference"], -x["goals_for"]))
+            
+            # Setze Positionen
+            for i, entry in enumerate(table):
+                entry["position"] = i + 1
+            
+            conn.close()
+            return table
+        
+        # Fallback: Keine Daten verfügbar
         conn.close()
-        return table
+        return []
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Fehler beim Laden der Tabelle: {str(e)}")
+        print(f"Error in get_table: {str(e)}")
+        # Fallback-Tabelle mit 0-Werten falls Fehler
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT 
+                    name,
+                    logo_url,
+                    short_name,
+                    external_id
+                FROM teams
+                ORDER BY name
+            """)
+            
+            table = []
+            position = 1
+            for row in cursor.fetchall():
+                table.append({
+                    "position": position,
+                    "team_name": row["name"],
+                    "team_icon_url": row["logo_url"],
+                    "shortname": row["short_name"],
+                    "games": 0,
+                    "wins": 0,
+                    "draws": 0, 
+                    "losses": 0,
+                    "goals_for": 0,
+                    "goals_against": 0,
+                    "goal_difference": 0,
+                    "points": 0
+                })
+                position += 1
+            
+            conn.close()
+            return table
+        except:
+            return []
 
 @app.get("/api/next-matchday")
 async def get_next_matchday():
