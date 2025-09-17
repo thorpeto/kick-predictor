@@ -2,7 +2,7 @@
 Vereinfaapp = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.0.8"
+    version="3.0.9"
 )Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
