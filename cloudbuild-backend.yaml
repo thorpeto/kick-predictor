@@ -46,6 +46,7 @@ steps:
       - '300'
       - '--port'
       - '8080'
+      - '--no-cpu-throttling'
 
 # Configure Cloud Build to use a machine with more resources
 options:

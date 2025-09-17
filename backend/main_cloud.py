@@ -1486,8 +1486,6 @@ async def manual_update_data():
                 "last_completed_matchday": last_matchday_after,
                 "total_matches_updated": updated_matches,
                 "new_finished_matches": new_finished_matches
-            }
-        }
             },
             "timestamp": datetime.now().isoformat()
         }
