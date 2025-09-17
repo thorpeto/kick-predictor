@@ -2,7 +2,7 @@
 Vereinfaapp = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.0.6"
+    version="3.0.7"
 )Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
@@ -43,7 +43,7 @@ def get_db_connection():
 @app.get("/")
 async def root():
     """Root Endpoint"""
-    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.6"}
+    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.7"}
 
 @app.get("/health")
 async def health_check():
@@ -718,6 +718,119 @@ async def get_team_goals_last_n_matches(cursor, team_id: int, n: int = 14) -> fl
     except Exception as e:
         print(f"Error calculating goals for team {team_id}: {e}")
         return 10.0
+
+@app.get("/api/team/{team_id}/form")
+async def get_team_form(team_id: int):
+    """Team-Form basierend auf letzten 14 Spielen - exakt wie lokale App"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Berechne Form basierend auf letzten 14 Spielen (wie in der lokalen App)
+        form = await get_team_form_from_db(cursor, team_id)
+        
+        conn.close()
+        return {
+            "details": {
+                "form_percentage": form * 100  # Frontend erwartet Prozent-Wert
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error in get_team_form: {str(e)}")
+        return {"details": {"form_percentage": 50.0}}
+
+@app.get("/api/team/{team_id}/matches")
+async def get_team_matches(team_id: int):
+    """Letzte Spiele eines Teams mit xG-Daten - exakt wie lokale App"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Prüfe zuerst matches_real Tabelle
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches_real'")
+        matches_real_exists = cursor.fetchone() is not None
+        
+        if matches_real_exists:
+            # Hole die letzten Spiele des Teams aus matches_real
+            cursor.execute("""
+                SELECT 
+                    mr.id as match_id,
+                    mr.matchday,
+                    mr.season,
+                    mr.match_date as date,
+                    mr.is_finished,
+                    mr.home_goals,
+                    mr.away_goals,
+                    mr.home_team_id,
+                    mr.home_team_name,
+                    mr.away_team_id,
+                    mr.away_team_name,
+                    tr_home.short_name as home_team_short,
+                    tr_home.icon_url as home_team_logo,
+                    tr_away.short_name as away_team_short,
+                    tr_away.icon_url as away_team_logo
+                FROM matches_real mr
+                LEFT JOIN teams_real tr_home ON mr.home_team_id = tr_home.team_id
+                LEFT JOIN teams_real tr_away ON mr.away_team_id = tr_away.team_id
+                WHERE (mr.home_team_id = ? OR mr.away_team_id = ?)
+                    AND mr.is_finished = 1
+                    AND mr.season IN ('2024', '2025')
+                ORDER BY mr.match_date DESC
+                LIMIT 14
+            """, (team_id, team_id))
+            
+            matches = []
+            for row in cursor.fetchall():
+                # Berechne xG-Werte (vereinfacht basierend auf Toren, da keine echten xG-Daten)
+                home_goals = row["home_goals"] or 0
+                away_goals = row["away_goals"] or 0
+                
+                # Vereinfachte xG-Berechnung: Basis-xG + Variation basierend auf Toren
+                home_xg = max(0.1, home_goals + (0.3 if home_goals > 0 else 0))
+                away_xg = max(0.1, away_goals + (0.3 if away_goals > 0 else 0))
+                
+                # Füge etwas Realismus hinzu
+                if home_goals == 0:
+                    home_xg = 0.8  # Hatten Chancen aber nicht getroffen
+                if away_goals == 0:
+                    away_xg = 0.7
+                    
+                matches.append({
+                    "match": {
+                        "id": row["match_id"],
+                        "home_team": {
+                            "id": row["home_team_id"],
+                            "name": row["home_team_name"],
+                            "short_name": row["home_team_short"] or row["home_team_name"],
+                            "logo_url": row["home_team_logo"]
+                        },
+                        "away_team": {
+                            "id": row["away_team_id"],
+                            "name": row["away_team_name"],
+                            "short_name": row["away_team_short"] or row["away_team_name"],
+                            "logo_url": row["away_team_logo"]
+                        },
+                        "date": row["date"],
+                        "matchday": row["matchday"],
+                        "season": row["season"]
+                    },
+                    "home_goals": home_goals,
+                    "away_goals": away_goals,
+                    "home_xg": home_xg,
+                    "away_xg": away_xg
+                })
+            
+            conn.close()
+            return matches
+        
+        # Fallback: keine Daten verfügbar
+        conn.close()
+        return []
+        
+    except Exception as e:
+        print(f"Error in get_team_matches: {str(e)}")
+        return []
 
 @app.get("/api/predictions")
 async def get_predictions():
