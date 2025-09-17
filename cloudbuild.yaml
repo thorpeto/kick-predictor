@@ -6,7 +6,7 @@ steps:
       - '-f'
       - 'backend/Dockerfile.prod'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:$SHORT_SHA'
       - '-t'
       - 'gcr.io/$PROJECT_ID/kick-predictor-backend:latest'
       - './backend'
@@ -19,7 +19,7 @@ steps:
       - '-f'
       - 'frontend/Dockerfile.prod'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$SHORT_SHA'
       - '-t'
       - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:latest'
       - './frontend'
@@ -29,7 +29,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'push'
-      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:$SHORT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: 
@@ -40,7 +40,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'push'
-      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$SHORT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: 
@@ -54,7 +54,7 @@ steps:
       - 'deploy'
       - 'kick-predictor-backend'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-backend:$SHORT_SHA'
       - '--region'
       - 'europe-west1'
       - '--platform'
@@ -63,11 +63,15 @@ steps:
       - '--max-instances'
       - '10'
       - '--memory'
-      - '512Mi'
+      - '1Gi'
       - '--cpu'
       - '1'
       - '--timeout'
       - '300'
+      - '--port'
+      - '8080'
+      - '--set-env-vars'
+      - 'PORT=8080'
 
   # Deploy frontend to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -76,7 +80,7 @@ steps:
       - 'deploy'
       - 'kick-predictor-frontend'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$SHORT_SHA'
       - '--region'
       - 'europe-west1'
       - '--platform'
@@ -88,12 +92,16 @@ steps:
       - '512Mi'
       - '--cpu'
       - '1'
+      - '--port'
+      - '8080'
+      - '--set-env-vars'
+      - 'PORT=8080'
 
 # The images to store
 images:
-  - 'gcr.io/$PROJECT_ID/kick-predictor-backend:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/kick-predictor-backend:$SHORT_SHA'
   - 'gcr.io/$PROJECT_ID/kick-predictor-backend:latest'
-  - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$SHORT_SHA'
   - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:latest'
 
 # Configure Cloud Build to use a machine with more resources
@@ -101,6 +109,10 @@ options:
   machineType: 'E2_HIGHCPU_8'
   substitution_option: 'ALLOW_LOOSE'
   logging: 'CLOUD_LOGGING_ONLY'
+
+# Explicit substitutions to ensure variables are available
+substitutions:
+  _REGION: 'europe-west1'
 
 # Timeout setting for the build pipeline
 timeout: '1800s'

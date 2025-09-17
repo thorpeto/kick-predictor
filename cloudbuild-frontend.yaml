@@ -6,7 +6,7 @@ steps:
       - '-f'
       - 'frontend/Dockerfile.prod'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$SHORT_SHA'
       - '-t'
       - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:latest'
       - './frontend'
@@ -16,7 +16,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'push'
-      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$SHORT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: 
@@ -30,7 +30,7 @@ steps:
       - 'deploy'
       - 'kick-predictor-frontend'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/kick-predictor-frontend:$SHORT_SHA'
       - '--region'
       - 'europe-west1'
       - '--platform'
@@ -42,6 +42,10 @@ steps:
       - '512Mi'
       - '--cpu'
       - '1'
+      - '--port'
+      - '8080'
+      - '--set-env-vars'
+      - 'PORT=8080'
 
 # Configure Cloud Build to use a machine with more resources
 options:
