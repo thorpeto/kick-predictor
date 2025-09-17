@@ -2,7 +2,7 @@
 Vereinfaapp = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.0.5"
+    version="3.0.6"
 )Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
@@ -43,7 +43,7 @@ def get_db_connection():
 @app.get("/")
 async def root():
     """Root Endpoint"""
-    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.5"}
+    return {"message": "Kick Predictor API - Cloud Edition", "status": "running", "version": "3.0.6"}
 
 @app.get("/health")
 async def health_check():
@@ -505,7 +505,7 @@ async def get_matchday_info():
 
 @app.get("/api/predictions/{matchday}")
 async def get_predictions_for_matchday(matchday: int):
-    """Vorhersagen für einen bestimmten Spieltag"""
+    """Vorhersagen für einen bestimmten Spieltag - echte Implementierung wie lokale App"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -542,39 +542,49 @@ async def get_predictions_for_matchday(matchday: int):
             
             predictions = []
             for row in cursor.fetchall():
-                # Vereinfachte Vorhersagelogik basierend auf Team-Namen
-                home_team = row["home_team_name"]
-                away_team = row["away_team_name"]
+                # Berechne echte Vorhersagen basierend auf letzten 14 Spielen
+                home_team_id = row["home_team_id"]
+                away_team_id = row["away_team_id"]
                 
-                # Basis-Wahrscheinlichkeiten (können später durch ML ersetzt werden)
-                home_win_prob = 0.45
-                draw_prob = 0.30
-                away_win_prob = 0.25
+                # Hole Form-Faktoren (basierend auf letzten 14 Spielen)
+                home_form = await get_team_form_from_db(cursor, home_team_id)
+                away_form = await get_team_form_from_db(cursor, away_team_id)
                 
-                # Einfache Anpassung basierend auf Team-Stärke (vereinfacht)
-                strong_teams = ["FC Bayern München", "Borussia Dortmund", "RB Leipzig", "Bayer 04 Leverkusen"]
-                if home_team in strong_teams:
-                    home_win_prob += 0.15
-                    away_win_prob -= 0.10
-                    draw_prob -= 0.05
-                if away_team in strong_teams:
-                    away_win_prob += 0.15
-                    home_win_prob -= 0.10
-                    draw_prob -= 0.05
+                # Hole Goals aus letzten 14 Spielen für xG-ähnliche Berechnung
+                home_goals_last_14 = await get_team_goals_last_n_matches(cursor, home_team_id, 14)
+                away_goals_last_14 = await get_team_goals_last_n_matches(cursor, away_team_id, 14)
+                
+                # Berechne Vorhersage mit echter Logik (wie in lokaler App)
+                form_diff = home_form - away_form
+                goals_diff = home_goals_last_14 - away_goals_last_14
+                
+                # Heimvorteil (10%)
+                home_advantage = 0.1
+                
+                # Basis-Wahrscheinlichkeiten
+                home_win_prob = 0.45 + (form_diff / 3) + (goals_diff / 20) + home_advantage
+                away_win_prob = 0.35 - (form_diff / 3) - (goals_diff / 20)
+                draw_prob = 0.20
                 
                 # Normalisierung
                 total = home_win_prob + draw_prob + away_win_prob
-                home_win_prob = home_win_prob / total
-                draw_prob = draw_prob / total
-                away_win_prob = away_win_prob / total
+                home_win_prob = max(0.05, min(0.90, home_win_prob / total))
+                away_win_prob = max(0.05, min(0.90, away_win_prob / total))
+                draw_prob = max(0.05, min(0.90, draw_prob / total))
                 
-                # Vorhersage für Ergebnis
-                if home_win_prob > away_win_prob:
-                    predicted_score = "2:1"
-                elif away_win_prob > home_win_prob:
-                    predicted_score = "1:2"
-                else:
-                    predicted_score = "1:1"
+                # Erneute Normalisierung nach Beschränkung
+                total = home_win_prob + draw_prob + away_win_prob
+                home_win_prob /= total
+                draw_prob /= total
+                away_win_prob /= total
+                
+                # Vorhersage für Ergebnis basierend auf durchschnittlichen Toren
+                home_avg_goals = max(0.5, home_goals_last_14 / 14 * home_form * 2)
+                away_avg_goals = max(0.5, away_goals_last_14 / 14 * away_form * 2)
+                
+                predicted_home_goals = round(home_avg_goals)
+                predicted_away_goals = round(away_avg_goals)
+                predicted_score = f"{predicted_home_goals}:{predicted_away_goals}"
                 
                 predictions.append({
                     "match": {
@@ -595,15 +605,15 @@ async def get_predictions_for_matchday(matchday: int):
                         "matchday": row["matchday"],
                         "season": row["season"]
                     },
-                    "home_win_prob": home_win_prob,
-                    "draw_prob": draw_prob,
-                    "away_win_prob": away_win_prob,
+                    "home_win_prob": round(home_win_prob, 3),
+                    "draw_prob": round(draw_prob, 3),
+                    "away_win_prob": round(away_win_prob, 3),
                     "predicted_score": predicted_score,
                     "form_factors": {
-                        "home_form": 50.0 + (home_win_prob - 0.33) * 100,
-                        "away_form": 50.0 + (away_win_prob - 0.33) * 100,
-                        "home_goals_last_14": int(10 + home_win_prob * 5),
-                        "away_goals_last_14": int(10 + away_win_prob * 5)
+                        "home_form": round(home_form * 100, 1),
+                        "away_form": round(away_form * 100, 1),
+                        "home_goals_last_14": int(home_goals_last_14),
+                        "away_goals_last_14": int(away_goals_last_14)
                     }
                 })
             
@@ -617,6 +627,97 @@ async def get_predictions_for_matchday(matchday: int):
     except Exception as e:
         print(f"Error in get_predictions_for_matchday: {str(e)}")
         return []
+
+async def get_team_form_from_db(cursor, team_id: int) -> float:
+    """Berechnet Team-Form basierend auf letzten 14 Spielen (über 2024 und 2025)"""
+    try:
+        # Hole die letzten 14 Spiele des Teams aus beiden Saisons
+        cursor.execute("""
+            SELECT 
+                mr.home_team_id,
+                mr.away_team_id,
+                mr.home_goals,
+                mr.away_goals,
+                mr.match_date
+            FROM matches_real mr
+            WHERE (mr.home_team_id = ? OR mr.away_team_id = ?)
+                AND mr.is_finished = 1
+                AND mr.season IN ('2024', '2025')
+            ORDER BY mr.match_date DESC
+            LIMIT 14
+        """, (team_id, team_id))
+        
+        matches = cursor.fetchall()
+        if not matches:
+            return 0.5  # Neutrale Form wenn keine Spiele
+            
+        total_points = 0
+        for match in matches:
+            is_home = match["home_team_id"] == team_id
+            home_goals = match["home_goals"] or 0
+            away_goals = match["away_goals"] or 0
+            
+            if is_home:
+                if home_goals > away_goals:
+                    total_points += 3  # Sieg
+                elif home_goals == away_goals:
+                    total_points += 1  # Unentschieden
+                # Niederlage = 0 Punkte
+            else:
+                if away_goals > home_goals:
+                    total_points += 3  # Sieg
+                elif away_goals == home_goals:
+                    total_points += 1  # Unentschieden
+                # Niederlage = 0 Punkte
+        
+        # Form als Verhältnis der erzielten zu maximal möglichen Punkten
+        max_points = len(matches) * 3
+        form = total_points / max_points if max_points > 0 else 0.5
+        
+        return max(0.0, min(1.0, form))  # Beschränke auf 0-1
+        
+    except Exception as e:
+        print(f"Error calculating team form for team {team_id}: {e}")
+        return 0.5
+
+async def get_team_goals_last_n_matches(cursor, team_id: int, n: int = 14) -> float:
+    """Berechnet durchschnittliche Tore pro Spiel aus letzten n Spielen"""
+    try:
+        cursor.execute("""
+            SELECT 
+                mr.home_team_id,
+                mr.away_team_id,
+                mr.home_goals,
+                mr.away_goals,
+                mr.match_date
+            FROM matches_real mr
+            WHERE (mr.home_team_id = ? OR mr.away_team_id = ?)
+                AND mr.is_finished = 1
+                AND mr.season IN ('2024', '2025')
+            ORDER BY mr.match_date DESC
+            LIMIT ?
+        """, (team_id, team_id, n))
+        
+        matches = cursor.fetchall()
+        if not matches:
+            return 10.0  # Fallback-Wert
+            
+        total_goals = 0
+        for match in matches:
+            is_home = match["home_team_id"] == team_id
+            home_goals = match["home_goals"] or 0
+            away_goals = match["away_goals"] or 0
+            
+            if is_home:
+                total_goals += home_goals
+            else:
+                total_goals += away_goals
+        
+        return total_goals
+        
+    except Exception as e:
+        print(f"Error calculating goals for team {team_id}: {e}")
+        return 10.0
 
 @app.get("/api/predictions")
 async def get_predictions():
