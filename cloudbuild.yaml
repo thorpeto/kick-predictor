@@ -70,8 +70,6 @@ steps:
       - '300'
       - '--port'
       - '8080'
-      - '--set-env-vars'
-      - 'PORT=8080'
 
   # Deploy frontend to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -94,8 +92,6 @@ steps:
       - '1'
       - '--port'
       - '8080'
-      - '--set-env-vars'
-      - 'PORT=8080'
 
 # The images to store
 images:

@@ -46,8 +46,6 @@ steps:
       - '300'
       - '--port'
       - '8080'
-      - '--set-env-vars'
-      - 'PORT=8080'
 
 # Configure Cloud Build to use a machine with more resources
 options:
