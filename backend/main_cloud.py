@@ -2,7 +2,7 @@
 Vereinfaapp = FastAPI(
     title="Kick Predictor API - Cloud Edition",
     description="API mit echten Bundesliga-Daten - Master DB Schema",
-    version="3.1.1"
+    version="3.1.2"
 )Backend Version für Cloud Run Deployment - Master DB Schema
 """
 import os
@@ -1062,15 +1062,33 @@ async def get_prediction_quality():
             draw_prob = prediction.get("draw_probability", 0.33) 
             away_win_prob = prediction.get("away_win_probability", 0.33)
             
-            # Vorhergesagtes Ergebnis basierend auf höchster Wahrscheinlichkeit
+            # Vorhergesagtes Ergebnis basierend auf Wahrscheinlichkeiten und realistischen Scores
             if home_win_prob > draw_prob and home_win_prob > away_win_prob:
-                predicted_score = "2:1"  # Home win
+                # Home win - variiere die Scores basierend auf Wahrscheinlichkeit
+                if home_win_prob > 0.7:
+                    predicted_score = "3:1"  # Deutlicher Favorit
+                elif home_win_prob > 0.5:
+                    predicted_score = "2:1"  # Leichter Favorit
+                else:
+                    predicted_score = "2:0"  # Knapper Favorit
                 predicted_tendency = "home_win"
             elif away_win_prob > draw_prob and away_win_prob > home_win_prob:
-                predicted_score = "1:2"  # Away win  
+                # Away win - variiere die Scores
+                if away_win_prob > 0.7:
+                    predicted_score = "1:3"  # Deutlicher Favorit
+                elif away_win_prob > 0.5:
+                    predicted_score = "1:2"  # Leichter Favorit
+                else:
+                    predicted_score = "0:2"  # Knapper Favorit
                 predicted_tendency = "away_win"
             else:
-                predicted_score = "1:1"  # Draw
+                # Draw - variiere die Unentschieden-Scores
+                if draw_prob > 0.4:
+                    predicted_score = "1:1"  # Wahrscheinlichstes Unentschieden
+                elif home_win_prob > away_win_prob:
+                    predicted_score = "2:2"  # Torreicheres Unentschieden, Home leicht stärker
+                else:
+                    predicted_score = "0:0"  # Torloses Unentschieden
                 predicted_tendency = "draw"
             
             # Echte Tendenz
