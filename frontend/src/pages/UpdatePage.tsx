@@ -52,14 +52,39 @@ const UpdatePage: React.FC = () => {
     try {
       const apiBaseUrl = getApiBaseUrl();
       const response = await axios.get(`${apiBaseUrl}/api/next-matchday-info`);
+      
+      // Prüfe ob die Response JSON ist
+      if (typeof response.data === 'string' || !response.data || typeof response.data !== 'object') {
+        throw new Error('Backend ist nicht verfügbar - Frontend-HTML statt API-Daten erhalten');
+      }
+      
       const data: MatchdayInfo = response.data;
+      
+      // Validiere die erwartete Struktur
+      if (!data.auto_updater || typeof data.current_season !== 'number') {
+        throw new Error('Unvollständige API-Response - Backend möglicherweise nicht korrekt deployed');
+      }
+      
       setMatchdayInfo(data);
       setAutoUpdaterStatus(data.auto_updater);
       setUpdateMessage('');
     } catch (error: any) {
       console.error('Fetch error:', error);
-      const errorMsg = error.response?.data?.detail || error.message || 'Unbekannter Fehler';
+      let errorMsg = 'Unbekannter Fehler';
+      
+      if (error.message.includes('Backend ist nicht verfügbar')) {
+        errorMsg = 'Backend-Service ist nicht verfügbar. Das Backend muss separat deployed werden.';
+      } else if (error.response?.status === 404) {
+        errorMsg = 'API-Endpoint nicht gefunden. Backend möglicherweise nicht deployed.';
+      } else if (error.response?.data?.detail) {
+        errorMsg = error.response.data.detail;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
       setUpdateMessage(`Fehler beim Laden der Spieltag-Informationen: ${errorMsg}`);
+      setMatchdayInfo(null);
+      setAutoUpdaterStatus(null);
     }
   };
 
@@ -67,10 +92,19 @@ const UpdatePage: React.FC = () => {
     try {
       const apiBaseUrl = getApiBaseUrl();
       const response = await axios.get(`${apiBaseUrl}/api/auto-updater/status`);
+      
+      // Prüfe ob die Response JSON ist
+      if (typeof response.data === 'string' || !response.data || typeof response.data !== 'object') {
+        console.warn('Auto-Updater API gibt HTML statt JSON zurück - Backend nicht verfügbar');
+        return;
+      }
+      
       const data: UpdateStatus = response.data;
       setAutoUpdaterStatus(data);
     } catch (error: any) {
       console.error('Fehler beim Laden des Auto-Updater Status:', error);
+      // Setze Status auf null bei Fehlern
+      setAutoUpdaterStatus(null);
     }
   };
 
@@ -244,15 +278,19 @@ const UpdatePage: React.FC = () => {
               <div className="bg-white p-3 rounded-lg">
                 <h4 className="font-medium mb-2">Kommende Spieltage</h4>
                 <div className="text-sm text-gray-600 space-y-1">
-                  {matchdayInfo.upcoming_matchdays.map((matchday, idx) => (
-                    <div key={idx}>
-                      <span className="font-medium">Spieltag {matchday.matchday}</span>
-                      <br />
-                      <span className="text-xs">
-                        {matchday.matches_count} Spiele ab {formatTime(matchday.next_match_date)}
-                      </span>
-                    </div>
-                  ))}
+                  {matchdayInfo.upcoming_matchdays && matchdayInfo.upcoming_matchdays.length > 0 ? (
+                    matchdayInfo.upcoming_matchdays.map((matchday, idx) => (
+                      <div key={idx}>
+                        <span className="font-medium">Spieltag {matchday.matchday}</span>
+                        <br />
+                        <span className="text-xs">
+                          {matchday.matches_count} Spiele ab {formatTime(matchday.next_match_date)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">Keine kommenden Spieltage verfügbar</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -294,11 +332,33 @@ const UpdatePage: React.FC = () => {
         </div>
         
         {updateMessage && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-medium mb-2">Update-Status:</h3>
+          <div className={`rounded-lg p-4 mb-6 ${
+            updateMessage.includes('Fehler') || updateMessage.includes('❌') 
+              ? 'bg-red-50 border border-red-200' 
+              : 'bg-gray-50'
+          }`}>
+            <h3 className="font-medium mb-2">Status:</h3>
             <pre className="text-sm text-gray-700 whitespace-pre-wrap">
               {updateMessage}
             </pre>
+            {updateMessage.includes('Backend') && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <p className="text-sm text-yellow-800">
+                  <strong>Hinweis:</strong> Das Backend muss als separater Service deployed werden. 
+                  Aktuell ist nur das Frontend verfügbar.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {!matchdayInfo && !updateMessage && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h3 className="font-medium mb-2 text-yellow-800">Backend nicht verfügbar</h3>
+            <p className="text-sm text-yellow-700">
+              Die Update-Funktionen sind nicht verfügbar, da das Backend nicht deployed ist. 
+              Nur das Frontend läuft aktuell in der Cloud.
+            </p>
           </div>
         )}
       </div>
