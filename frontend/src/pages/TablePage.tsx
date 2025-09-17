@@ -42,15 +42,63 @@ const TablePage = () => {
   const TableHeader = () => (
     <thead className="bg-bundesliga-navy text-white">
       <tr>
-        <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider">Pos</th>
-        <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Team</th>
-        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden sm:table-cell">Sp</th>
-        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden md:table-cell">S</th>
-        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden md:table-cell">U</th>
-        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden md:table-cell">N</th>
-        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden sm:table-cell">Tore</th>
-        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden sm:table-cell">Diff</th>
-        <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider">Pkt</th>
+        <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider" title="Position">
+          Pos
+        </th>
+        <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
+          Team
+        </th>
+        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden sm:table-cell" title="Spiele">
+          Sp
+        </th>
+        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden md:table-cell" title="Siege">
+          S
+        </th>
+        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden md:table-cell" title="Unentschieden">
+          U
+        </th>
+        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden md:table-cell" title="Niederlagen">
+          N
+        </th>
+        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden sm:table-cell" title="Tore (geschossen:erhalten)">
+          Tore
+        </th>
+        <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider hidden sm:table-cell" title="Tordifferenz">
+          Diff
+        </th>
+        <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider" title="Punkte">
+          Pkt
+        </th>
+      </tr>
+      {/* Zusätzliche Zeile mit vollständigen Bezeichnungen für Desktop */}
+      <tr className="hidden lg:table-row bg-bundesliga-navy/80 text-white/90">
+        <th className="px-2 py-1 text-left text-xs font-normal">
+          Position
+        </th>
+        <th className="px-3 py-1 text-left text-xs font-normal">
+          Mannschaft
+        </th>
+        <th className="px-2 py-1 text-center text-xs font-normal">
+          Spiele
+        </th>
+        <th className="px-2 py-1 text-center text-xs font-normal">
+          Siege
+        </th>
+        <th className="px-2 py-1 text-center text-xs font-normal">
+          Unentschieden
+        </th>
+        <th className="px-2 py-1 text-center text-xs font-normal">
+          Niederlagen
+        </th>
+        <th className="px-2 py-1 text-center text-xs font-normal">
+          Geschossen:Erhalten
+        </th>
+        <th className="px-2 py-1 text-center text-xs font-normal">
+          Tordifferenz
+        </th>
+        <th className="px-3 py-1 text-center text-xs font-normal">
+          Punkte
+        </th>
       </tr>
     </thead>
   )
@@ -161,6 +209,16 @@ const TablePage = () => {
 
       {/* Tabelle */}
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        {/* Mobile-optimierte Spalten-Übersicht */}
+        <div className="bg-gray-100 p-3 border-b sm:hidden">
+          <div className="text-xs text-gray-600 grid grid-cols-4 gap-2">
+            <div className="text-center"><strong>Pos</strong> - Position</div>
+            <div className="text-center"><strong>Team</strong> - Mannschaft</div>
+            <div className="text-center"><strong>Pkt</strong> - Punkte</div>
+            <div className="text-center">Weitere Details im Landscape-Modus</div>
+          </div>
+        </div>
+        
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <TableHeader />
@@ -176,6 +234,21 @@ const TablePage = () => {
       {/* Mobile Hinweis */}
       <div className="mt-4 text-xs text-gray-500 sm:hidden">
         Tippe auf ein Team für mehr Details. Für alle Spalten verwende ein größeres Display.
+      </div>
+
+      {/* Spalten-Erklärung */}
+      <div className="mt-4 bg-blue-50 rounded-lg p-4">
+        <h4 className="text-sm font-semibold text-blue-900 mb-2">Spalten-Erklärung:</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 text-xs text-blue-800">
+          <div><strong>Pos:</strong> Position in der Tabelle</div>
+          <div><strong>Sp:</strong> Gespielte Spiele</div>
+          <div><strong>S:</strong> Anzahl Siege</div>
+          <div><strong>U:</strong> Anzahl Unentschieden</div>
+          <div><strong>N:</strong> Anzahl Niederlagen</div>
+          <div><strong>Tore:</strong> Geschossene:Erhaltene Tore</div>
+          <div><strong>Diff:</strong> Tordifferenz (geschossen minus erhalten)</div>
+          <div><strong>Pkt:</strong> Punkte (3 für Sieg, 1 für Unentschieden)</div>
+        </div>
       </div>
 
       {/* Zusätzliche Informationen */}
