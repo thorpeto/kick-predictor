@@ -40,7 +40,7 @@ const TablePage = () => {
 
   // Responsive Spalten für mobile vs desktop
   const TableHeader = () => (
-    <thead className="bg-bundesliga-navy text-white">
+    <thead className="bg-bundesliga-dark text-white">
       <tr>
         <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider" title="Position">
           Pos
@@ -71,7 +71,7 @@ const TablePage = () => {
         </th>
       </tr>
       {/* Zusätzliche Zeile mit vollständigen Bezeichnungen für Desktop */}
-      <tr className="hidden lg:table-row bg-bundesliga-navy/80 text-white/90">
+      <tr className="hidden lg:table-row bg-bundesliga-dark/80 text-white/90">
         <th className="px-2 py-1 text-left text-xs font-normal">
           Position
         </th>

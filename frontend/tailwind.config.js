@@ -10,6 +10,7 @@ module.exports = {
         'bundesliga': {
           'red': '#d20515',
           'dark': '#001e50',
+          'navy': '#001e50',
         },
       },
     },
