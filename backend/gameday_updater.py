@@ -12,13 +12,23 @@ from real_data_sync import RealDataSync
 import logging
 
 # Logging konfigurieren
+import os
+
+# Sicherstellen, dass das Log-Verzeichnis existiert
+log_dir = os.path.dirname(os.path.abspath(__file__))
+log_file = os.path.join(log_dir, 'auto_update.log')
+
+# Erstelle Log-Datei falls sie nicht existiert
+os.makedirs(log_dir, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/workspaces/kick-predictor/backend/auto_update.log'),
+        logging.FileHandler(log_file, mode='a', encoding='utf-8'),
         logging.StreamHandler()
-    ]
+    ],
+    force=True  # Überschreibt bestehende Konfiguration
 )
 logger = logging.getLogger(__name__)
 
