@@ -1298,26 +1298,20 @@ async def get_next_matchday_info():
         weekend_matches = 9  # Standard Bundesliga
         is_game_weekend = len(upcoming_matchdays) > 0
         
-        # Mock Auto-Updater Status (da wir keinen echten Auto-Updater haben)
-        auto_updater_status = {
-            "is_running": False,
-            "is_gameday_time": False,
-            "last_update": None,
-            "update_count": 0,
-            "current_time": datetime.now().isoformat(),
-            "next_scheduled_updates": [
-                {
-                    "date": "2025-09-20",
-                    "day": "Samstag",
-                    "times": "15:30, 18:30"
-                },
-                {
-                    "date": "2025-09-21", 
-                    "day": "Sonntag",
-                    "times": "15:30, 17:30"
-                }
-            ]
-        }
+        # Auto-Updater Status aus gameday_updater holen
+        try:
+            from gameday_updater import get_updater_status
+            auto_updater_status = get_updater_status()
+        except Exception as e:
+            # Fallback falls gameday_updater nicht verfügbar
+            auto_updater_status = {
+                "is_running": False,
+                "is_gameday_time": False,
+                "last_update": None,
+                "update_count": 0,
+                "current_time": datetime.now().isoformat(),
+                "next_scheduled_updates": []
+            }
         
         conn.close()
         return {
@@ -1340,25 +1334,8 @@ async def get_next_matchday_info():
 @app.get("/api/auto-updater/status")
 async def get_auto_updater_status():
     """Auto-Updater Status für UpdatePage"""
-    return {
-        "is_running": False,
-        "is_gameday_time": False,
-        "last_update": None,
-        "update_count": 0,
-        "current_time": datetime.now().isoformat(),
-        "next_scheduled_updates": [
-            {
-                "date": "2025-09-20",
-                "day": "Samstag", 
-                "times": "15:30, 18:30"
-            },
-            {
-                "date": "2025-09-21",
-                "day": "Sonntag",
-                "times": "15:30, 17:30"
-            }
-        ]
-    }
+    from gameday_updater import get_updater_status
+    return get_updater_status()
 
 @app.post("/api/update-data")
 async def manual_update_data():
@@ -1503,21 +1480,30 @@ async def manual_update_data():
 
 @app.post("/api/auto-updater/start")
 async def start_auto_updater():
-    """Start Auto-Updater (Mock für UpdatePage)"""
-    return {
-        "message": "Auto-Updater gestartet (simuliert)",
-        "status": "running",
-        "timestamp": datetime.now().isoformat()
-    }
+    """Start Auto-Updater"""
+    try:
+        from gameday_updater import start_auto_updater
+        start_auto_updater()
+        return {
+            "status": "success",
+            "message": "Auto-Updater erfolgreich gestartet",
+            "scheduled_times": "Täglich um 17:30, 20:30 und 22:30"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Starten: {str(e)}")
 
 @app.post("/api/auto-updater/stop") 
 async def stop_auto_updater():
-    """Stop Auto-Updater (Mock für UpdatePage)"""
-    return {
-        "message": "Auto-Updater gestoppt (simuliert)",
-        "status": "stopped",
-        "timestamp": datetime.now().isoformat()
-    }
+    """Stop Auto-Updater"""
+    try:
+        from gameday_updater import stop_auto_updater
+        stop_auto_updater()
+        return {
+            "status": "success", 
+            "message": "Auto-Updater erfolgreich gestoppt"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Stoppen: {str(e)}")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

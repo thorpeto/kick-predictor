@@ -30,16 +30,14 @@ class GamedayAutoUpdater:
         self.update_count = 0
         
     def is_gameday_time(self) -> bool:
-        """Prüfe ob es gerade Spieltag-Zeit ist (17:00-23:00)"""
+        """Prüfe ob es gerade Update-Zeit ist (17:30, 20:30 oder 22:30)"""
         now = datetime.now()
-        current_hour = now.hour
-        current_weekday = now.weekday()  # 0=Montag, 6=Sonntag
+        current_time = now.strftime("%H:%M")
         
-        # Spieltage: Freitag (4), Samstag (5), Sonntag (6)
-        is_gameday = current_weekday in [4, 5, 6]  # Freitag, Samstag, Sonntag
-        is_game_hours = 17 <= current_hour <= 23
+        # Update-Zeiten: täglich um 17:30, 20:30 und 22:30
+        update_times = ["17:30", "20:30", "22:30"]
         
-        return is_gameday and is_game_hours
+        return current_time in update_times
     
     async def smart_update(self) -> dict:
         """Intelligentes Update - nur wenn nötig"""
@@ -59,14 +57,15 @@ class GamedayAutoUpdater:
             last_completed = cursor.fetchone()[0] or 3
             next_matchday = last_completed + 1
             
-            # Prüfe ob heute Spiele sind
+            # Prüfe ob heute Spiele sind (oder in den nächsten Tagen)
             cursor.execute("""
                 SELECT COUNT(*), 
                        SUM(CASE WHEN is_finished = 1 THEN 1 ELSE 0 END) as finished
                 FROM matches_real 
                 WHERE season = '2025' 
                 AND matchday = ?
-                AND date(match_date) = date('now')
+                AND date(match_date) >= date('now', '-1 day')
+                AND date(match_date) <= date('now', '+1 day')
             """, (next_matchday,))
             
             result = cursor.fetchone()
@@ -76,8 +75,8 @@ class GamedayAutoUpdater:
             conn.close()
             
             if todays_matches == 0:
-                logger.info("ℹ️ Keine Spiele heute - Update übersprungen")
-                return {"status": "no_games_today", "message": "Keine Spiele heute"}
+                logger.info("ℹ️ Keine relevanten Spiele in naher Zeit - führe trotzdem Update durch")
+                # Führe Update trotzdem durch, um sicherzustellen dass wir nichts verpassen
             
             # Lade neue Daten
             logger.info(f"⚽ Prüfe Spieltag {next_matchday} - {todays_matches} Spiele heute, {finished_today} beendet")
@@ -118,12 +117,8 @@ class GamedayAutoUpdater:
             return {"status": "error", "message": str(e)}
     
     def run_update_if_gameday(self):
-        """Führe Update nur aus wenn es Spieltag-Zeit ist"""
-        if not self.is_gameday_time():
-            # logger.info("⏰ Außerhalb der Spieltag-Zeiten (17-23 Uhr, Fr-So)")
-            return
-        
-        logger.info("🎮 Spieltag-Zeit erkannt - starte automatisches Update...")
+        """Führe Update aus (täglich zu den konfigurierten Zeiten)"""
+        logger.info("🎮 Update-Zeit erkannt - starte automatisches Update...")
         
         # Async Update in Thread ausführen
         try:
@@ -138,23 +133,17 @@ class GamedayAutoUpdater:
             logger.error(f"❌ Fehler beim automatischen Update: {e}")
     
     def schedule_gameday_updates(self):
-        """Plane Updates alle 30 Minuten zwischen 17-23 Uhr"""
-        # Alle 30 Minuten zwischen 17:00 und 23:00
-        times = [
-            "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
-            "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00"
-        ]
-        
-        for time_str in times:
-            schedule.every().friday.at(time_str).do(self.run_update_if_gameday)
-            schedule.every().saturday.at(time_str).do(self.run_update_if_gameday)
-            schedule.every().sunday.at(time_str).do(self.run_update_if_gameday)
+        """Plane Updates täglich um 17:30, 20:30 und 22:30"""
+        # Täglich um die definierten Zeiten
+        schedule.every().day.at("17:30").do(self.run_update_if_gameday)
+        schedule.every().day.at("20:30").do(self.run_update_if_gameday)
+        schedule.every().day.at("22:30").do(self.run_update_if_gameday)
         
         # Zusätzlich: Montagmorgen Vollupdate (falls etwas verpasst wurde)
         schedule.every().monday.at("03:00").do(self.weekly_cleanup)
         
         logger.info("⏰ Automatische Updates geplant:")
-        logger.info("   - Freitag, Samstag, Sonntag: 17:00-23:00 alle 30 Min")
+        logger.info("   - Täglich: 17:30, 20:30, 22:30")
         logger.info("   - Montag 03:00: Wöchentliches Cleanup")
     
     def weekly_cleanup(self):
@@ -178,7 +167,7 @@ class GamedayAutoUpdater:
         self.is_running = True
         logger.info("🚀 Gameday Auto-Updater gestartet...")
         logger.info(f"   Aktuelle Zeit: {datetime.now().strftime('%A, %H:%M')}")
-        logger.info(f"   Spieltag-Zeit aktiv: {self.is_gameday_time()}")
+        logger.info(f"   Nächste Update-Zeit: 17:30, 20:30 oder 22:30")
         
         def scheduler_thread():
             while self.is_running:
@@ -215,20 +204,21 @@ class GamedayAutoUpdater:
         now = datetime.now()
         next_updates = []
         
-        # Nächste Spieltage
-        for days_ahead in range(7):
-            check_date = now + timedelta(days=days_ahead)
-            weekday = check_date.weekday()
-            
-            if weekday in [4, 5, 6]:  # Freitag, Samstag, Sonntag
-                day_name = check_date.strftime('%A')
-                next_updates.append({
-                    "date": check_date.strftime('%Y-%m-%d'),
-                    "day": day_name,
-                    "times": "17:00-23:00 (alle 30min)"
-                })
+        # Update-Zeiten: 17:30, 20:30, 22:30
+        update_times = ["17:30", "20:30", "22:30"]
         
-        return next_updates[:3]  # Nächste 3 Spieltage
+        # Nächste 3 Tage
+        for days_ahead in range(3):
+            check_date = now + timedelta(days=days_ahead)
+            day_name = check_date.strftime('%A')
+            
+            next_updates.append({
+                "date": check_date.strftime('%Y-%m-%d'),
+                "day": day_name,
+                "times": "17:30, 20:30, 22:30"
+            })
+        
+        return next_updates
 
 # Globale Instanz
 auto_updater = GamedayAutoUpdater()
